@@ -18,13 +18,13 @@ module Incarnations {
 
   type RExpr = RSolvers.RExpr
 
-  datatype DeclMappings = DeclMappings(typeMap: map<Types.TypeDecl, STypeDecl>, functionMap: map<Function, STypedDeclaration>)
+  datatype DeclMappings = DeclMappings(typeMap: map<TypeDecl, STypeDecl>, functionMap: map<Function, STypedDeclaration>)
   {
     function Type2SType(typ: Type): SType {
       Type2STypeWithMap(typ, typeMap)
     }
 
-    static function Type2STypeWithMap(typ: Type, typeMap: map<Types.TypeDecl, STypeDecl>): SType {
+    static function Type2STypeWithMap(typ: Type, typeMap: map<TypeDecl, STypeDecl>): SType {
       match typ
       case BoolType => SBool
       case IntType | TagType => SInt

@@ -7,15 +7,17 @@ module Ast {
   import opened DeclarationMarkers
 
   export
+    reveals NamedDecl, NamedDecl.Distinct, TypeDecl, Type
+    provides NamedDecl.Name, Type.ToString
     reveals Program, Type, Variable, Procedure, Label, Parameter, LocalVariable
     reveals Expr, Operator, ParameterMode, AExpr, Stmt, CallArgument
     reveals Program.WellFormed, Procedure.WellFormed, Parameter.WellFormed, AExpr.WellFormed, Stmt.WellFormed, Expr.WellFormed, CallArgument.WellFormed
     reveals CallArgument.CorrespondingMode
-    provides Procedure.Name, Procedure.Parameters, Procedure.Pre, Procedure.Post, Procedure.Body
+    provides Procedure.Parameters, Procedure.Pre, Procedure.Post, Procedure.Body
     reveals Procedure.SignatureWellFormed, Procedure.WellFormedHeader
     reveals Function, FParameter, FunctionDefinition
-    provides Function.Name, Function.Parameters, Function.ResultType, Function.Tag, Function.Definition, Function.ExplainedBy, FParameter.injective
     reveals Function.SignatureWellFormed, Function.WellFormed, Function.WellFormedAsTagger, FParameter.WellFormed, FunctionDefinition.WellFormed
+    provides Function.Parameters, Function.ResultType, Function.Tag, Function.Definition, Function.ExplainedBy, FParameter.injective
     reveals Axiom, Axiom.WellFormed
     provides Axiom.Explains, Axiom.Expr
     provides Variable.name, Variable.typ
@@ -31,9 +33,38 @@ module Ast {
     provides CustomLiteralToString
     provides Raw, Types, Wrappers, DeclarationMarkers
 
-  type Type = Types.Type
+  trait NamedDecl extends object {
+    const Name: string
 
-  datatype Program = Program(types: seq<Types.TypeDecl>, functions: seq<Function>, axioms: seq<Axiom>, procedures: seq<Procedure>)
+    static predicate Distinct(decls: seq<NamedDecl>) {
+      forall i, j :: 0 <= i < j < |decls| ==> decls[i].Name != decls[j].Name
+    }
+  }
+
+  class TypeDecl extends NamedDecl {
+    constructor (name: string)
+      ensures Name == name
+    {
+      Name := name;
+    }
+  }
+
+  datatype Type =
+    | BoolType
+    | IntType
+    | TagType
+    | UserType(decl: TypeDecl)
+  {
+    function ToString(): string {
+      match this
+      case BoolType => Types.BoolTypeName
+      case IntType => Types.IntTypeName
+      case TagType => Types.TagTypeName
+      case UserType(decl) => decl.Name
+    }
+  }
+
+  datatype Program = Program(types: seq<TypeDecl>, functions: seq<Function>, axioms: seq<Axiom>, procedures: seq<Procedure>)
   {
     predicate WellFormed()
       reads procedures, functions
@@ -179,7 +210,7 @@ module Ast {
     {
       && WellFormed()
       && |Parameters| == 1
-      && ResultType == Types.TagType
+      && ResultType == TagType
     }
   }
 
@@ -350,25 +381,25 @@ module Ast {
   {
     function ExprType(): Type {
       match this
-      case BLiteral(_) => Types.BoolType
-      case ILiteral(_) => Types.IntType
+      case BLiteral(_) => BoolType
+      case ILiteral(_) => IntType
       case CustomLiteral(_, typ) => typ
       case IdExpr(v) => v.typ
       case OperatorExpr(op, args) =>
         match op {
           case IfThenElse =>
-            if op.ArgumentCount() == |args| then args[1].ExprType() else Types.BoolType // TODO: Rather than an `else` branch, use a WellFormed precondition
+            if op.ArgumentCount() == |args| then args[1].ExprType() else BoolType // TODO: Rather than an `else` branch, use a WellFormed precondition
           case Equiv | LogicalImp | LogicalAnd | LogicalOr | LogicalNot =>
-            Types.BoolType
+            BoolType
           case Eq | Neq | Less | AtMost =>
-            Types.BoolType
+            BoolType
           case Plus | Minus | Times | Div | Mod | UnaryMinus =>
-            Types.IntType
+            IntType
         }
       case FunctionCallExpr(func, args) => func.ResultType
       case LabeledExpr(_, body) => body.ExprType()
       case LetExpr(_, _, body) => body.ExprType()
-      case QuantifierExpr(_, _, _, _) => Types.BoolType
+      case QuantifierExpr(_, _, _, _) => BoolType
     }
 
     predicate HasType(typ: Type) {
@@ -379,7 +410,7 @@ module Ast {
       match this
       case BLiteral(_) => true
       case ILiteral(_) => true
-      case CustomLiteral(_, typ) => typ != Types.BoolType && typ != Types.IntType
+      case CustomLiteral(_, typ) => typ != BoolType && typ != IntType
       case IdExpr(_) => true
       case OperatorExpr(op, args) =>
         && |args| == op.ArgumentCount()

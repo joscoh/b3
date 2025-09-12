@@ -32,7 +32,7 @@ module ResolvedPrinter {
     }
   }
 
-  method TypeDecl(decl: Types.TypeDecl) {
+  method TypeDecl(decl: TypeDecl) {
     print "type ", decl.Name, "\n";
   }
 
@@ -214,7 +214,7 @@ module ResolvedPrinter {
     }
   }
 
-  method IdTypeDecl(prefix: string, name: string, typ: Types.Type) {
+  method IdTypeDecl(prefix: string, name: string, typ: Type) {
     print prefix, name, ": ", typ.ToString();
   }
 
