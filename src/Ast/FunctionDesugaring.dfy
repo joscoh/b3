@@ -58,7 +58,7 @@ module FunctionDesugaring {
           ensures f.Name != name
         {
           var i :| 0 <= i < j && f.Name == CombineNames(func.Name, func.Parameters[i].name);
-          var prefixLen := |func.Name| + 1;
+          var prefixLen := |func.Name| + 2;
           assert f.Name[prefixLen..] == func.Parameters[i].name != func.Parameters[j].name == name[prefixLen..];
         }
 
@@ -201,6 +201,6 @@ module FunctionDesugaring {
   }
 
   function CombineNames(base: string, member: string): string {
-    base + "." + member
+    base + ".." + member
   }
 }

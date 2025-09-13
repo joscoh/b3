@@ -20,7 +20,7 @@ function ListTag(subject: List): tag
 
 function F(a: int, injective b: bool): bool
 
-function F.b(subject: bool): bool
+function F..b(subject: bool): bool
 
 function G(): int
   when true
@@ -35,7 +35,7 @@ function H(injective str: string, a: int): string
   str
 }
 
-function H.str(subject: string): string
+function H..str(subject: string): string
 
 function NicelyIndented(x: int, y: int, b: bool, c: MyClass): int
 {
@@ -71,41 +71,41 @@ function NotStringy(s: MyString): bool
 
 function Red(): Color tag ColorTag
 
-function Red.tag(): tag
+function Red..tag(): tag
 {
   |%tag: tag|
 }
 
 function Green(): Color tag ColorTag
 
-function Green.tag(): tag
+function Green..tag(): tag
 {
   |%tag: tag|
 }
 
 function Gray(injective n: int): Color tag ColorTag
 
-function Gray.n(subject: Color): int
+function Gray..n(subject: Color): int
 
-function Gray.tag(): tag
+function Gray..tag(): tag
 {
   |%tag: tag|
 }
 
 function Nil(): List tag ListTag
 
-function Nil.tag(): tag
+function Nil..tag(): tag
 {
   |%tag: tag|
 }
 
 function Cons(injective head: int, injective tail: List): List tag ListTag
 
-function Cons.head(subject: List): int
+function Cons..head(subject: List): int
 
-function Cons.tail(subject: List): List
+function Cons..tail(subject: List): List
 
-function Cons.tag(): tag
+function Cons..tag(): tag
 {
   |%tag: tag|
 }
@@ -113,46 +113,46 @@ function Cons.tag(): tag
 axiom explains F
   forall a: int, b: bool
     pattern F(a, b)
-    F.b(F(a, b)) == b
+    F..b(F(a, b)) == b
 
 axiom explains H
   forall str: string, a: int
     pattern H(str, a)
-    H.str(H(str, a)) == str
+    H..str(H(str, a)) == str
 
 axiom explains Red
-  ColorTag(Red()) == Red.tag()
+  ColorTag(Red()) == Red..tag()
 
 axiom explains Green
-  ColorTag(Green()) == Green.tag()
+  ColorTag(Green()) == Green..tag()
 
 axiom explains Gray
   forall n: int
     pattern Gray(n)
-    Gray.n(Gray(n)) == n
+    Gray..n(Gray(n)) == n
 
 axiom explains Gray
   forall n: int
     pattern Gray(n)
-    ColorTag(Gray(n)) == Gray.tag()
+    ColorTag(Gray(n)) == Gray..tag()
 
 axiom explains Nil
-  ListTag(Nil()) == Nil.tag()
+  ListTag(Nil()) == Nil..tag()
 
 axiom explains Cons
   forall head: int, tail: List
     pattern Cons(head, tail)
-    Cons.head(Cons(head, tail)) == head
+    Cons..head(Cons(head, tail)) == head
 
 axiom explains Cons
   forall head: int, tail: List
     pattern Cons(head, tail)
-    Cons.tail(Cons(head, tail)) == tail
+    Cons..tail(Cons(head, tail)) == tail
 
 axiom explains Cons
   forall head: int, tail: List
     pattern Cons(head, tail)
-    ListTag(Cons(head, tail)) == Cons.tag()
+    ListTag(Cons(head, tail)) == Cons..tag()
 
 axiom explains G
   true ==>
@@ -174,20 +174,20 @@ axiom explains AnotherNicelyIndented
     pattern AnotherNicelyIndented(x, y)
     AnotherNicelyIndented(x, y) == x < y && x <= y && x != y && y < x && y <= x && x <= y && val u: int := 19 val v: int := 21 if u + v <= v + u then 300 < 400 else -1 + G() != 75
 
-axiom explains Red.tag
-  Red.tag() == |%tag: tag|
+axiom explains Red..tag
+  Red..tag() == |%tag: tag|
 
-axiom explains Green.tag
-  Green.tag() == |%tag: tag|
+axiom explains Green..tag
+  Green..tag() == |%tag: tag|
 
-axiom explains Gray.tag
-  Gray.tag() == |%tag: tag|
+axiom explains Gray..tag
+  Gray..tag() == |%tag: tag|
 
-axiom explains Nil.tag
-  Nil.tag() == |%tag: tag|
+axiom explains Nil..tag
+  Nil..tag() == |%tag: tag|
 
-axiom explains Cons.tag
-  Cons.tag() == |%tag: tag|
+axiom explains Cons..tag
+  Cons..tag() == |%tag: tag|
 
 axiom
   true ==>
