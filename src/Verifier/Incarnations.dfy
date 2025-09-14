@@ -9,7 +9,7 @@ module Incarnations {
   export
     reveals DeclMappings
     provides DeclMappings.Type2SType, DeclMappings.Type2STypeWithMap
-    provides Incarnations
+    provides Incarnations, Incarnations.Print
     provides Incarnations.Empty, Incarnations.DeclMap
     provides Incarnations.Update, Incarnations.Reserve, Incarnations.Variables, Incarnations.DomainRestrict
     provides Incarnations.Set, Incarnations.CreateSubMap
@@ -53,6 +53,26 @@ module Incarnations {
 
     function DeclMap(): DeclMappings {
       declMap
+    }
+
+    method Print(header: string := "") {
+      print "==== Incarnations: ", header, "\n";
+
+      print "  nextSequenceCount:\n";
+      var ss := nextSequenceCount.Keys;
+      while ss != {} {
+        var s :| s in ss;
+        ss := ss - {s};
+        print "    ", s, " := ", nextSequenceCount[s], "\n";
+      }
+
+      print "  m:\n";
+      var vv := m.Keys;
+      while vv != {} {
+        var v: Variable :| v in vv;
+        vv := vv - {v};
+        print "    ", v.name, " := ", m[v].name, "\n";
+      }
     }
 
     function Type2SType(typ: Type): SType {

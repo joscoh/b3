@@ -341,6 +341,13 @@ module Verifier {
     // learn postconditions
     var postLearning := SpecConversions.ToLearn(proc.Post);
     context := ProcessPredicateStmts(postLearning, postIncarnations, context, smtEngine);
+
+    if "print-incarnations" in smtEngine.Options {
+      incarnations_in.Print("start of call to " + proc.Name);
+      preIncarnations.Print("precondition of call");
+      postIncarnations.Print("postcondition of call");
+      incarnations.Print("after call");
+    }
   }
 
   method ProcessPredicateStmts(stmts: seq<Stmt>, incarnations: I.Incarnations, context_in: RSolvers.RContext, smtEngine: RSolvers.REngine) returns (context: RSolvers.RContext)

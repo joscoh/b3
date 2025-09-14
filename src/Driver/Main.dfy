@@ -35,6 +35,7 @@ module B3 {
       case "solver-log" => CLI.OptionInfo.ArgumentCount(0)
       case "solver-failure" => CLI.OptionInfo.ArgumentCount(0)
       case "show-proof-obligations" => CLI.OptionInfo.ArgumentCount(0)
+      case "print-incarnations" => CLI.OptionInfo.ArgumentCount(0)
       case _ => CLI.OptionInfo.Unknown
     }
   }
