@@ -1,4 +1,4 @@
-# Simple examples
+# Examples
 
 Here is a simple B3 program to whet your appetite.
 
@@ -22,3 +22,10 @@ procedure TestLists(list: List) {
 
 A to-do item for this documentation is to also make inline code, like `check x < y`,
 be processed by pygments syntax highlighting.
+
+Here is a longer example:
+
+```{literalinclude} ../../test/refman/FileSystem.b3
+:start-after: // BEGIN EXAMPLE
+:end-before: // END EXAMPLE
+```

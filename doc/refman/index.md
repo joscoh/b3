@@ -9,7 +9,7 @@ primarily those of interest in an automated deductive verifier for a source prog
 :maxdepth: 2
 :caption: Contents:
 motivation
-simple-examples
+examples
 syntax
 top-level-decls
 statements
