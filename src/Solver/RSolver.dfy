@@ -152,7 +152,7 @@ module RSolvers {
     function CustomLiteralToSExprName(): string
       requires CustomLiteral?
     {
-      "|" + typ.ToString() + ":" + s + "|"
+      "|" + s + ":" + typ.ToString() + "|"
     }
 
     static function BoundVarsToString(vv: seq<SolverExpr.SConstant>): string {
