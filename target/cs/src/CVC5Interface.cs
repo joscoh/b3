@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.IO;
 using Smt;
 
-namespace Z3SmtSolver {
+namespace CVC5SmtSolver {
   
-  public class Z3SmtProcess : SmtProcess {
+  public class CVC5SmtProcess : SmtProcess {
     const bool DEBUG = false;
     private Process process;
     private StreamWriter input;
@@ -18,10 +18,10 @@ namespace Z3SmtSolver {
       }
     }
 
-    public Z3SmtProcess() {
+    public CVC5SmtProcess() {
       try {
-        // Start Z3 process in interactive mode
-        var startInfo = new ProcessStartInfo("z3", "-in -smt2");
+        // Start CVC5 process in interactive mode
+        var startInfo = new ProcessStartInfo("cvc5", "--incremental");
         startInfo.RedirectStandardInput = true;
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
@@ -33,18 +33,18 @@ namespace Z3SmtSolver {
           input = process.StandardInput;
           output = process.StandardOutput;
 
-          // Initialize Z3 with SMT-LIB2 commands
+          // Initialize CVC5 with SMT-LIB2 commands
           SendCmd("(set-option :produce-models true)");
           SendCmd("(set-logic ALL)");
         }
         else {
-          Console.WriteLine("Failed to start Z3 process");
+          Console.WriteLine("Failed to start CVC5 process");
         }
         
         isDisposed = false;
       }
       catch (Exception ex) {
-        Console.WriteLine($"Error initializing Z3: {ex.Message}");
+        Console.WriteLine($"Error initializing CVC5: {ex.Message}");
         isDisposed = true;
       }
     }
@@ -63,7 +63,7 @@ namespace Z3SmtSolver {
     public string SendCmd(string cmd) {
       try {
         if (isDisposed || input == null || output == null) {
-          return "error: Z3 not initialized or disposed";
+          return "error: CVC5 not initialized or disposed";
         }
         
         // Special case for exit command - mark as disposed
@@ -74,14 +74,14 @@ namespace Z3SmtSolver {
         // Send command
         input.WriteLine(cmd);
         input.Flush();
-        Log($"Z3 << {cmd}");
+        Log($"CVC5 << {cmd}");
         
         // Read response
         string response = ReadResponse(cmd);
-        Log($"Z3 >> {response}");
+        Log($"CVC5 >> {response}");
         return response;
       } catch (Exception ex) {
-        Console.WriteLine($"Error communicating with Z3: {ex.Message}");
+        Console.WriteLine($"Error communicating with CVC5: {ex.Message}");
         return $"error: {ex.Message}";
       }
     }
@@ -135,8 +135,8 @@ namespace Z3SmtSolver {
     }
   }
   public static partial class __default {
-    public static SmtProcess CreateZ3Process() {
-      return new Z3SmtProcess();
+    public static SmtProcess CreateCVC5Process() {
+      return new CVC5SmtProcess();
     }
   }
 }

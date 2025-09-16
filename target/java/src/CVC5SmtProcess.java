@@ -1,9 +1,9 @@
-package Z3SmtSolver;
+package CVC5SmtSolver;
 
 import java.io.*;
 import java.util.concurrent.TimeUnit;
 
-public class Z3SmtProcess implements Smt.SmtProcess {
+public class CVC5SmtProcess implements Smt.SmtProcess {
     private static final boolean DEBUG = false;
     private Process process;
     private PrintWriter input;
@@ -16,9 +16,9 @@ public class Z3SmtProcess implements Smt.SmtProcess {
         }
     }
 
-    public Z3SmtProcess() {
+    public CVC5SmtProcess() {
         try {
-            ProcessBuilder pb = new ProcessBuilder("z3", "-in", "-smt2");
+            ProcessBuilder pb = new ProcessBuilder("CVC5", "--incremental");
             pb.redirectErrorStream(true);
             process = pb.start();
 
@@ -30,7 +30,7 @@ public class Z3SmtProcess implements Smt.SmtProcess {
             
             isDisposed = false;
         } catch (Exception ex) {
-            System.out.println("Error initializing Z3: " + ex.getMessage());
+            System.out.println("Error initializing CVC5: " + ex.getMessage());
             isDisposed = true;
         }
     }
@@ -50,7 +50,7 @@ public class Z3SmtProcess implements Smt.SmtProcess {
     public String SendCmd(String cmd) {
         try {
             if (isDisposed || input == null || output == null) {
-                return "error: Z3 not initialized or disposed";
+                return "error: CVC5 not initialized or disposed";
             }
             
             if ("(exit)".equals(cmd)) {
@@ -59,13 +59,13 @@ public class Z3SmtProcess implements Smt.SmtProcess {
             
             input.println(cmd);
             input.flush();
-            log("Z3 << " + cmd);
+            log("CVC5 << " + cmd);
             
             String response = readResponse(cmd);
-            log("Z3 >> " + response);
+            log("CVC5 >> " + response);
             return response;
         } catch (Exception ex) {
-            System.out.println("Error communicating with Z3: " + ex.getMessage());
+            System.out.println("Error communicating with CVC5: " + ex.getMessage());
             return "error: " + ex.getMessage();
         }
     }

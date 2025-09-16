@@ -522,8 +522,14 @@ module RSolvers {
   method CreateEngine(axiomMap: map<Ast.Axiom, RExpr>, options: CLI.CliOptions) returns (r: REngine)
     ensures r.Valid() && fresh(r.Repr)
   {
-    var z3 := ExternalSolvers.Create(ExternalSolvers.Z3, "solver-log" in options);
-    var state := new Solvers.SolverState(z3);
+    var solver;
+    if "cvc5" in options {
+      solver := ExternalSolvers.Create(ExternalSolvers.CVC5, "solver-log" in options);
+    } else {
+      // use Z3 by default
+      solver := ExternalSolvers.Create(ExternalSolvers.Z3, "solver-log" in options);
+    }
+    var state := new Solvers.SolverState(solver);
     r := new REngine.New(state, axiomMap, options);
   }
 }

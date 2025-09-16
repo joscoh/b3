@@ -2,13 +2,14 @@ module ExternalSolvers {
   import opened Basics
   import Smt
   import Z3SmtSolver
+  import CVC5SmtSolver
 
   export
     reveals ExternalSolver
     provides Create
     provides Smt, Basics
 
-  datatype ExternalSolver = Z3 // soon:  | CVC5
+  datatype ExternalSolver = Z3 | CVC5
 
   method Create(which: ExternalSolver, printLog: bool) returns (smtEngine: Smt.SolverEngine)
     ensures !smtEngine.Disposed()
@@ -18,62 +19,72 @@ module ExternalSolvers {
     var process;
     match which {
       case Z3 => process := Z3SmtSolver.CreateZ3Process();
+      case CVC5 => process := CVC5SmtSolver.CreateCVC5Process();
     }
     smtEngine := new Smt.SolverEngine(process, printLog);
   }
 
   @Test
-  method DemonstrateExternalSolver() {
+  method DemonstrateExternalSolvers() {
     var z3 := Create(ExternalSolver.Z3, false);
-    
-    z3.DeclareFunction("x", "()", "Int");
+    Demonstrate(z3);
+    var cvc5 := Create(ExternalSolver.CVC5, false);
+    Demonstrate(cvc5);
+  }
 
-    z3.Push();
+  method Demonstrate(smtEngine: Smt.SolverEngine)
+    requires !smtEngine.Disposed()
+    requires smtEngine.CommandStacks() == Cons(Nil, Nil)
+    modifies smtEngine, smtEngine.process
+  {
+    smtEngine.DeclareFunction("x", "()", "Int");
+
+    smtEngine.Push();
     
     // Example: Check if x > y and y > x is satisfiable
-    z3.DeclareFunction("y", "()", "Int");
+    smtEngine.DeclareFunction("y", "()", "Int");
 
     // Assert x > y
-    z3.Assume("(> x y)");
+    smtEngine.Assume("(> x y)");
     
     // Assert y > x
-    z3.Assume("(> y x)");
+    smtEngine.Assume("(> y x)");
     
     // Check satisfiability
-    var result := z3.CheckSat();
+    var result := smtEngine.CheckSat();
     
     // Print result (should be "unsat")
     print "Checking if x > y and y > x is satisfiable: ", result, "\n";
     expect result == "unsat";
     
     // Pop back to clean state
-    z3.Pop();
+    smtEngine.Pop();
     
     // Example: Check if x >= 0 and x <= 10 is satisfiable
-    z3.Push();
+    smtEngine.Push();
     
     // Assert x >= 0
-    z3.Assume("(>= x 0)");
+    smtEngine.Assume("(>= x 0)");
     
     // Assert x <= 10
-    z3.Assume("(<= x 10)");
+    smtEngine.Assume("(<= x 10)");
     
     // Check satisfiability
-    result := z3.CheckSat();
+    result := smtEngine.CheckSat();
     
     // Print result (should be "sat")
     print "Checking if x >= 0 and x <= 10 is satisfiable: ", result, "\n";
     expect result == "sat";
     
     // If satisfiable, get a model
-    var model := z3.GetModel();
+    var model := smtEngine.GetModel();
     print "Model: ", model, "\n";
     
     // Pop back to clean state
-    z3.Pop();
+    smtEngine.Pop();
     
     // Clean up
-    z3.Dispose();
+    smtEngine.Dispose();
   }
 }
 
@@ -83,6 +94,16 @@ module Z3SmtSolver {
   // Factory method to create a Z3 solver instance
   @Axiom
   method {:extern} CreateZ3Process() returns (process: Smt.SmtProcess)
+    ensures !process.Disposed()
+    ensures fresh(process)
+}
+
+module CVC5SmtSolver {
+  import Smt
+
+  // Factory method to create a CVC5 solver instance
+  @Axiom
+  method {:extern} CreateCVC5Process() returns (process: Smt.SmtProcess)
     ensures !process.Disposed()
     ensures fresh(process)
 }
