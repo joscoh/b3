@@ -1,0 +1,114 @@
+// RUN: %verify "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+function P(a: int, b: int): bool
+
+procedure TestAutoInvParameters(
+  x: int autoinv P(x, y),
+  inout y: int autoinv P(old$y, y) && P(y, x),
+  out z: int autoinv P(z, y) && P(z, old$y) && P(z, x))
+{
+  var prevZ := z
+  y := y + 1
+  z := 300
+
+  check P(x, y - 1) // by auto-invariant of x
+  
+  check old$y == y - 1
+  check P(y - 1, y - 1) && P(y - 1, x) // by auto-invariant of y
+  check P(y - 1, y) // error: auto-invariant of y has not been reapplied
+  check P(y, x) // error: auto-invariant of y has not been reapplied
+
+  check P(prevZ, y - 1) && P(prevZ, old$y) && P(prevZ, x) // by auto-invariant of z
+  check P(300, y - 1) // error: auto-invariant of z has not been reapplied
+  check P(300, old$y) // error: auto-invariant of z has not been reapplied
+  check P(300, x) // error: auto-invariant of z has not been reapplied
+}
+
+procedure TestCall()
+{
+  var a := 600
+  var b := 700
+  var c := 800
+  TestAutoInvParameters(a, inout b, out c)
+  
+  check P(a, b) // error: auto-invariants about in-parameters don't apply after call
+  check P(a, 700) // error: auto-invariants about in-parameters don't apply after call
+
+  check P(700, b) && P(b, a) // by auto-invariant of y
+  check P(700, a) // error: auto-invariants don't apply to the pre-state of the call
+
+  check P(c, b) && P(c, 700) && P(c, a) // by auto-invariant of z
+  check P(800, 600) // error: auto-invariants don't apply to the pre-state of the call
+  check P(800, 700) // error: auto-invariants don't apply to the pre-state of the call
+  check P(800, b) // error: auto-invariants don't apply to the pre-state of the call
+}
+
+procedure TestAutoInvLocals()
+{
+  var m: int autoinv P(m, 82)
+  val n: int autoinv P(n, m)
+  var o autoinv P(o, 83) := 100
+  val p autoinv P(p, m) := 102
+  var q: int autoinv P(q, 84) := 104
+  val r: int autoinv P(r, m) := 106
+
+  var s: int autoinv false := 108 // auto-invariant has no effect here, because there's an initializer
+
+  check P(m, 82)
+  check P(n, m)
+  check P(o, 83) // error: auto-invariant o (which has an initializer) has not been applied
+  check P(p, m) // error: auto-invariant p (which has an initializer) has not been applied
+  check P(q, 84) // error: auto-invariant q (which has an initializer) has not been applied
+  check P(r, m) // error: auto-invariant q (which has an initializer) has not been applied
+}
+
+procedure TestAutoInvLocalsAgain(x: int)
+{
+  var m: int autoinv P(m, 82)
+  val n: int autoinv P(n, m)
+  var o autoinv P(o, 83) := 100
+  val p autoinv P(p, m) := 102
+  var q: int autoinv P(q, 84) := 104
+  val r: int autoinv P(r, m) := 106
+
+  var s: int autoinv false // this time with no initializer
+
+  check x == 17 // sure, anything goes now
+  check false
+}
+
+procedure TestLoops(
+  x: int autoinv P(x, 10),
+  inout y: int autoinv P(old$y, y) && P(y, 20),
+  out z: int autoinv P(z, 30),
+  n: int)
+  requires 0 <= n
+{
+  var a: int autoinv a % 2 == 0
+  var b: int
+  var c: int := 15
+
+  z := 1200
+
+  var i := 0
+  loop
+    invariant 0 <= i && i <= n
+  {
+    if i == n {
+      exit
+    }
+
+    y := y + 333
+    z := z + 777
+    a := a + 2
+    i := i + 1
+  }
+
+  check i == n
+  check c == 15
+  check a % 2 == 0
+  check P(x, 10)
+  check P(old$y, y) && P(y, 20)
+  check P(z, 30)
+}

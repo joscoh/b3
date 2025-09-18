@@ -1,0 +1,20 @@
+Verifying TestAutoInvParameters ...
+Error: Failed to prove check P(y - 1, y)
+Error: Failed to prove check P(y, x)
+Error: Failed to prove check P(300, y - 1)
+Error: Failed to prove check P(300, old$y)
+Error: Failed to prove check P(300, x)
+Verifying TestCall ...
+Error: Failed to prove check P(a, b)
+Error: Failed to prove check P(a, 700)
+Error: Failed to prove check P(700, a)
+Error: Failed to prove check P(800, 600)
+Error: Failed to prove check P(800, 700)
+Error: Failed to prove check P(800, b)
+Verifying TestAutoInvLocals ...
+Error: Failed to prove check P(o, 83)
+Error: Failed to prove check P(p, m)
+Error: Failed to prove check P(q, 84)
+Error: Failed to prove check P(r, m)
+Verifying TestAutoInvLocalsAgain ...
+Verifying TestLoops ...

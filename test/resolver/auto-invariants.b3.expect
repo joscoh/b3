@@ -1,0 +1,25 @@
+// Resolved B3 program
+
+function P(a: int, b: int): bool
+
+procedure TestAutoInvParameters(x: int autoinv P(x, y), inout y: int autoinv P(old$y, y) && P(y, x), out z: int autoinv P(z, y) && P(z, old$y) && P(z, x))
+{
+  return: {
+    y := y + 1
+    z := 300
+    check old$y == y - 1
+  }
+}
+
+procedure TestAutoInvLocals()
+{
+  return: {
+    var m: int autoinv P(m, 82)
+    val n: int autoinv P(n, m)
+    var o: int autoinv P(o, 83) := 100
+    val p: int autoinv P(p, m) := 102
+    var q: int autoinv P(q, 84) := 104
+    val r: int autoinv P(r, m) := 106
+    var s: int autoinv false := 108
+  }
+}

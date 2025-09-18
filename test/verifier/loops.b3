@@ -1,0 +1,28 @@
+// RUN: %verify "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+procedure TestLoops(n: int, k: int)
+  requires 0 <= n
+{
+  var a := 0
+  var b := 9
+  var c: int := 15
+
+  var i := 0
+  loop
+    invariant 0 <= i && i <= n
+    invariant b == a + 9
+  {
+    if i == n {
+      exit
+    }
+
+    a := a + k
+    b := b + k
+    i := i + 1
+  }
+
+  check i == n
+  check i == 11 // error: nope
+  check c == 15
+}

@@ -76,13 +76,16 @@ module Verifier {
 
     {
       var context := context_in;
+      context := AssumeAutoInvariants(proc.Parameters, {Raw.In, Raw.InOut}, preIncarnations, context);
       context := VetSpecification(proc.Pre, preIncarnations, context, smtEngine);
+      context := AssumeAutoInvariants(proc.Parameters, {Raw.InOut, Raw.Out}, postIncarnations, context);
       var _ := VetSpecification(proc.Post, postIncarnations, context, smtEngine);
     }
 
     if proc.Body.Some? {
       var body := proc.Body.value;
       var context := context_in;
+      context := AssumeAutoInvariants(proc.Parameters, {Raw.In, Raw.InOut, Raw.Out}, bodyIncarnations, context);
 
       var preLearning := SpecConversions.ToLearn(proc.Pre);
       context := ProcessPredicateStmts(preLearning, bodyIncarnations, context, smtEngine);
@@ -107,6 +110,7 @@ module Verifier {
         postIncarnations := postIncarnations.Set(parameter, v);
       case InOut =>
         var vOld := new SConstant(parameter.name + "%old", declMap.Type2SType(parameter.typ));
+        preIncarnations := preIncarnations.Set(parameter.oldInOut.value, vOld);
         preIncarnations := preIncarnations.Set(parameter, vOld);
         bodyIncarnations := bodyIncarnations.Set(parameter.oldInOut.value, vOld);
         bodyIncarnations := bodyIncarnations.Set(parameter, vOld);
@@ -153,6 +157,22 @@ module Verifier {
     }
   }
 
+  method AssumeAutoInvariants(parameters: seq<Parameter>, modes: set<ParameterMode>,
+                              incarnations: I.Incarnations, context_in: RSolvers.RContext)
+      returns (context: RSolvers.RContext)
+  {
+    context := context_in;
+    for n := 0 to |parameters| {
+      var p := parameters[n];
+      if p.mode in modes && p.maybeAutoInv.Some? {
+        var autoInv := p.maybeAutoInv.value;
+        assume {:axiom} autoInv.WellFormed();
+        var cond := incarnations.REval(autoInv);
+        context := RSolvers.Extend(context, cond);
+      }
+    }
+  }
+
   method Process(stmts: seq<Stmt>, incarnations_in: I.Incarnations, context_in: RSolvers.RContext, B: BC.T, smtEngine: RSolvers.REngine)
     requires AstValid.StmtSeq(stmts) && BC.Valid(B) && smtEngine.Valid()
     modifies smtEngine.Repr
@@ -181,6 +201,11 @@ module Verifier {
       if init.Some? {
         var sRhs := incarnations.REval(init.value);
         context := RSolvers.ExtendWithEquality(context, sv, sRhs);
+      } else if v.maybeAutoInv.Some? {
+        var autoInv := v.maybeAutoInv.value;
+        assume {:axiom} autoInv.WellFormed();
+        var cond := incarnations.REval(autoInv);
+        context := RSolvers.Extend(context, cond);
       }
       BC.StmtMeasurePrepend(body, cont);
       Process([body] + cont, incarnations, context, B, smtEngine);
@@ -343,7 +368,8 @@ module Verifier {
     var preChecks := SpecConversions.ToCheck(proc.Pre);
     var _ := ProcessPredicateStmts(preChecks, preIncarnations, context, smtEngine);
 
-    // learn postconditions
+    // learn auto-invariants and postconditions
+    context := AssumeAutoInvariants(proc.Parameters, {Raw.InOut, Raw.Out}, postIncarnations, context);
     var postLearning := SpecConversions.ToLearn(proc.Post);
     context := ProcessPredicateStmts(postLearning, postIncarnations, context, smtEngine);
 
@@ -385,14 +411,34 @@ module Verifier {
     var _ := ProcessPredicateStmts(initChecks, incarnations, context, smtEngine);
 
     // Havoc the assignment targets of the loop body
+    // TODO: don't do AssignmentTargets.Compute as a set, do a sequence so that auto-invariants come out in a fixed order
     var assignmentTargets := AssignmentTargets.Compute(body);
-    while assignmentTargets != {}
-      invariant smtEngine.Valid()
-    {
+    var targets: seq<Variable> := [];
+    while assignmentTargets != {} {
       var v :| v in assignmentTargets;
       assignmentTargets := assignmentTargets - {v};
+      targets := targets + [v];
+    }
+    for n := 0 to |targets|
+      invariant smtEngine.Valid()
+    {
+      var v := targets[n];
       var sv;
       incarnations, sv := incarnations.Update(v);
+    }
+    for n := 0 to |targets|
+      invariant smtEngine.Valid()
+    {
+      var v := targets[n];
+      if v is AutoInvVariable { // TODO: are assignment targets always AutoInvVariable's? If so, change AssignmentTargets.Compute above
+        var av := v as AutoInvVariable;
+        if av.maybeAutoInv.Some? {
+          var autoInv := av.maybeAutoInv.value;
+          assume {:axiom} autoInv.WellFormed(); // TODO
+          var cond := incarnations.REval(autoInv);
+          context := RSolvers.Extend(context, cond);
+        }
+      }
     }
 
     var _ := VetSpecification(invariants, incarnations, context, smtEngine, stmt);
