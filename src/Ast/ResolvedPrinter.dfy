@@ -62,7 +62,7 @@ module ResolvedPrinter {
 
       print "{\n";
       Indent(IndentAmount);
-      Expression(body, MultipleLines(IndentAmount));
+      Expression(body, format := MultipleLines(IndentAmount));
       print "\n}\n";
     }
   }
@@ -76,7 +76,7 @@ module ResolvedPrinter {
     }
     print "\n";
     Indent(IndentAmount);
-    Expression(axiom.Expr, MultipleLines(IndentAmount));
+    Expression(axiom.Expr, format := MultipleLines(IndentAmount));
     print "\n";
   }
 
@@ -292,74 +292,83 @@ module ResolvedPrinter {
 
   // Print "expr" starting from the current position and ending without a final newline.
   // If "format" allows, break lines at an indent of "format.indent".
-  method Expression(expr: Expr, format: ExprFormatOption := SingleLine) {
-    // TODO: add parentheses around the entire expression when necessary
+  method Expression(expr: Expr, context: BindingPower := BindingPower.Init, format: ExprFormatOption := SingleLine) {
     match expr
     case BLiteral(value) => print value;
     case ILiteral(value) => print value;
-    case CustomLiteral(s, typ) => print "|", s, ": ", typ.ToString(), "|";
+    case CustomLiteral(s, typ) => print CustomLiteralToString(s, typ.ToString());
     case IdExpr(v) => print v.name;
     case OperatorExpr(op, args) =>
+      var opStrength := op.BindingStrength();
+      Parenthesis(Side.Left, opStrength, context);
       if op == Operator.IfThenElse && op.ArgumentCount() == |args| {
         var ind := format.More();
         print "if ";
         Expression(args[0]);
         print " then";
         ind.Space();
-        Expression(args[1], ind);
+        Expression(args[1], format := ind);
         format.Space();
         print "else";
         if args[2].OperatorExpr? && args[2].op == Operator.IfThenElse {
           // print as cascading if
           print " ";
-          Expression(args[2], format);
+          Expression(args[2], opStrength.SubexpressionPower(Side.Right, context), format := format);
         } else {
           ind.Space();
-          Expression(args[2], ind);
+          Expression(args[2], opStrength.SubexpressionPower(Side.Right, context), format := ind);
         }
       } else if op.ArgumentCount() == 1 == |args| {
         print op.ToString();
-        Expression(args[0]);
+        Expression(args[0], opStrength.SubexpressionPower(Side.Right, context));
       } else if op.ArgumentCount() == 2 == |args| {
-        Expression(args[0]);
+        Expression(args[0], opStrength.SubexpressionPower(Side.Left, context));
         print " ", op.ToString();
         if op in {Operator.LogicalImp, Operator.LogicalAnd, Operator.LogicalOr} {
           format.Space();
-          Expression(args[1], format);
+          Expression(args[1], opStrength.SubexpressionPower(Side.Right, context), format := format);
         } else {
           print " ";
-          Expression(args[1]);
+          Expression(args[1], opStrength.SubexpressionPower(Side.Right, context));
         }
       } else {
         print op.ToString(), "(";
         ExpressionList(args);
         print ")";
       }
+      Parenthesis(Side.Right, opStrength, context);
     case FunctionCallExpr(func, args) =>
       print func.Name, "(";
       ExpressionList(args);
       print ")";
     case LabeledExpr(lbl, body) =>
+      var opStrength := BindingPower.EndlessOperator;
+      Parenthesis(Side.Left, opStrength, context);
       print lbl.Name, ": ";
-      Expression(body, format);
+      Expression(body, opStrength.SubexpressionPower(Side.Right, context), format := format);
+      Parenthesis(Side.Right, opStrength, context);
     case LetExpr(v, rhs, body) =>
+      var opStrength := BindingPower.EndlessOperator;
+      Parenthesis(Side.Left, opStrength, context);
       IdTypeDecl("val ", v.name, v.typ);
       print " := ";
       Expression(rhs);
       format.Space();
-      Expression(body, format);
+      Expression(body, opStrength.SubexpressionPower(Side.Right, context), format := format);
+      Parenthesis(Side.Right, opStrength, context);
     case QuantifierExpr(univ, vv, patterns, body) =>
+      var opStrength := BindingPower.EndlessOperator;
+      Parenthesis(Side.Left, opStrength, context);
       Bindings(if univ then "forall " else "exists ", vv);
       var ind := format.More();
-      if patterns != [] {
-        for i := 0 to |patterns| {
-          ind.Space();
-          print "pattern ";
-          ExpressionList(patterns[i].exprs);
-        }
+      for i := 0 to |patterns| {
+        ind.Space();
+        print "pattern ";
+        ExpressionList(patterns[i].exprs);
       }
       ind.Space();
-      Expression(body, ind);
+      Expression(body, opStrength.SubexpressionPower(Side.Right, context), format := ind);
+      Parenthesis(Side.Right, opStrength, context);
   }
 
   method ExpressionList(exprs: seq<Expr>) {

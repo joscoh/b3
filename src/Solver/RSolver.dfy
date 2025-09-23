@@ -11,6 +11,7 @@ module RSolvers {
   import opened Std.Wrappers
   import opened Basics
   import CLI = CommandLineOptions
+  import PrintUtil
 
   export
     reveals RExpr, ROperator, RPattern
@@ -135,7 +136,7 @@ module RSolvers {
       match this
       case Boolean(b) => if b then "true" else "false"
       case Integer(x) => Int2String(x)
-      case CustomLiteral(s, typ) => Ast.CustomLiteralToString(s, typ.ToString())
+      case CustomLiteral(s, typ) => PrintUtil.CustomLiteralToString(s, typ.ToString())
       case Id(v) => v.name
       case FuncAppl(op, args) =>
         op.ToString() + "(" + RExprListToString(args, this) + ")"

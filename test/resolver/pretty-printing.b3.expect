@@ -1,0 +1,52 @@
+// Resolved B3 program
+
+function Q(x: int): bool
+
+procedure P(b: bool)
+{
+  return: {
+    var a: int := 2 * 3 + 4 * 5 * (6 + 7) * 8
+    a := 2 + 3 - 4 + 5 - (6 + 7) - (8 - 9) - 10
+    a := 2 * 3 / 4 * 5 % (6 * 7) / (8 % 9) % 10
+    assert (b && b && b) || (b && b)
+    assert (b || b || b) && (b || b)
+    assert (a < a) == (a <= a)
+    assert b == (a == a) && (a != a) != b
+    var x: int := 3 + (if b then 10 else 20) + 4
+    var y: int := 3 + (val z: int := if b then 10 else 20 z + z) + 4
+    assert b && (forall x: int Q(x)) && b
+    x := 3 * (if b then 10 else 1 + 20) + 4
+    x := 3 + (if b then 10 else 1 + 20) * 4
+    var k: int := a + -a - ----a + -(a + a) + 2
+    var l: bool := b && !b && !!!!b && !(b || b) && b
+  }
+}
+
+procedure R(out a: int, out b: bool)
+{
+  return: {
+    a := 0 + 1 + 2
+    a := 3 + 4 - 5
+    a := 6 - 7 + 8
+    a := 9 - 10 - 11
+    a := 0 + 1 + 2
+    a := 3 + 4 - 5
+    a := 6 - (7 + 8)
+    a := 9 - (10 - 11)
+    a := (3 + 4 * 5) / 6
+    b := (((b && b) || b) && b) || b
+    b := b && (b || (b && (b || b)))
+  }
+}
+
+procedure ImpliesAndFriends(a: bool, b: bool, c: bool, d: bool)
+{
+  return: {
+    assert a ==> b ==> c ==> d
+    assert d ==> c ==> b ==> a
+    assert a <==> b <==> c <==> d
+    assert a ==> (b ==> c) ==> d
+    assert d ==> (c ==> b) ==> a
+    assert a <==> b <==> c <==> d
+  }
+}

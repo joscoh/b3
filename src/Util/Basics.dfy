@@ -100,6 +100,13 @@ module Basics {
       FoldRight(s[..last], f, f(s[last], z))
   }
 
+  function FoldRightNonempty<X>(s: seq<X>, f: (X, X) -> X): X
+    requires s != []
+  {
+    var last := |s| - 1;
+    FoldRight(s[..last], f, s[last])
+  }
+
   function Prune<X>(s: seq<X>, keepers: set<X>): seq<X> {
     if s == [] then
       s

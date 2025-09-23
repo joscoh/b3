@@ -5,6 +5,7 @@ module ExprResolver {
   import Raw = RawAst
   import opened Ast
   import opened TypeResolver
+  import PrintUtil
 
   export
     reveals ExprResolverState, ExprResolverState.Valid
@@ -44,7 +45,7 @@ module ExprResolver {
       case CustomLiteral(s, typeName) =>
         var typ :- ResolveType(typeName, ers.typeMap);
         if typ == BoolType || typ == IntType {
-          return Failure("custom literal is not allowed for a built-in type: " + Ast.CustomLiteralToString(s, typeName));
+          return Failure("custom literal is not allowed for a built-in type: " + PrintUtil.CustomLiteralToString(s, typeName));
         }
         r := CustomLiteral(s, typ);
       case IdExpr(name) =>

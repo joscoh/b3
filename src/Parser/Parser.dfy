@@ -392,7 +392,7 @@ module Parser {
     parseLogicalExpr(c).Then(e0 =>
       Or([
         Sym("==>").e_I(parseLogicalExpr(c).RepSep(Sym("==>")))
-          .M(exprs => FoldRight(exprs, (a, b) => OperatorExpr(Operator.LogicalImp, [b, a]), e0)),
+          .M(exprs => FoldRightNonempty([e0] + exprs, (a, b) => OperatorExpr(Operator.LogicalImp, [a, b]))),
         SymNotPrefix("<==", ["<==>"]).e_I(parseLogicalExpr(c).RepSep(SymNotPrefix("<==", ["<==>"])))
           .M(exprs => FoldLeft(e0, exprs, (a, b) => OperatorExpr(Operator.LogicalImp, [b, a]))),
         Nothing.M(_ => e0)

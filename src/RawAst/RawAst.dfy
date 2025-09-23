@@ -2,6 +2,7 @@ module RawAst {
   import opened Std.Wrappers
   import opened Basics
   import opened Types
+  import PrintUtil
 
   // Top-level program
 
@@ -407,18 +408,19 @@ module RawAst {
       case LogicalNot => "!"
     }
 
-    static const EndlessOperatorBindingStrength: nat := 10
-
-    function BindingStrength(): nat {
+    function BindingStrength(): PrintUtil.BindingPower {
       match this
-      case IfThenElse => EndlessOperatorBindingStrength
-      case Equiv => 20
-      case LogicalImp => 30
-      case LogicalAnd | LogicalOr => 40
-      case Eq | Neq | Less | AtMost => 50
-      case Plus | Minus => 60
-      case Times | Div | Mod => 70
-      case LogicalNot | UnaryMinus => 80
+      case IfThenElse => PrintUtil.BindingPower.EndlessOperator
+      case Equiv => PrintUtil.BindingPower(20, 20)
+      case LogicalImp => PrintUtil.BindingPower(31, 30)
+      case LogicalAnd => PrintUtil.BindingPower(40, 40, PrintUtil.SameFamilyWins(0))
+      case LogicalOr => PrintUtil.BindingPower(40, 40, PrintUtil.SameFamilyWins(1))
+      case Eq | Neq | Less | AtMost => PrintUtil.BindingPower(50, 50, PrintUtil.ContextWins)
+      case Plus => PrintUtil.BindingPower(60, 60)
+      case Minus => PrintUtil.BindingPower(60, 61)
+      case Times => PrintUtil.BindingPower(70, 70)
+      case Div | Mod => PrintUtil.BindingPower(70, 71)
+      case LogicalNot | UnaryMinus => PrintUtil.BindingPower(80, 80)
     }
   }
 

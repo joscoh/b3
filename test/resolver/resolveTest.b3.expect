@@ -172,7 +172,7 @@ axiom explains NicelyIndented
 axiom explains AnotherNicelyIndented
   forall x: int, y: int
     pattern AnotherNicelyIndented(x, y)
-    AnotherNicelyIndented(x, y) == x < y && x <= y && x != y && y < x && y <= x && x <= y && val u: int := 19 val v: int := 21 if u + v <= v + u then 300 < 400 else -1 + G() != 75
+    AnotherNicelyIndented(x, y) == (x < y && x <= y && x != y && y < x && y <= x && x <= y && val u: int := 19 val v: int := 21 if u + v <= v + u then 300 < 400 else -1 + G() != 75)
 
 axiom explains Red..tag
   Red..tag() == |%tag: tag|
@@ -405,7 +405,7 @@ procedure UseQuantifier(t: MyString, u: MyString)
       assume t != u
       check Stringy(u)
     } or {
-      assume !t != u
+      assume !(t != u)
     }
   }
 }

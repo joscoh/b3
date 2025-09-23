@@ -5,6 +5,7 @@ module Ast {
   import Raw = RawAst
   import opened Values
   import opened DeclarationMarkers
+  import PrintUtil
 
   export
     reveals NamedDecl, NamedDecl.Distinct, TypeDecl, Type
@@ -32,8 +33,7 @@ module Ast {
     provides Expr.CreateTrue, Expr.CreateFalse, Expr.CreateNegation, Expr.CreateLet, Expr.CreateForall
     provides Expr.CreateAnd, Expr.CreateBigAnd, Expr.CreateOr, Expr.CreateBigOr
     reveals Pattern, Pattern.WellFormed
-    provides CustomLiteralToString
-    provides Raw, Types, Wrappers, DeclarationMarkers
+    provides Raw, Types, Wrappers, DeclarationMarkers, PrintUtil
 
   trait NamedDecl extends object {
     const Name: string
@@ -434,40 +434,46 @@ module Ast {
         && body.WellFormed()
     }
 
-    function ToString(contextStrength: nat := 0): string {
+    function ToString(context: PrintUtil.BindingPower := PrintUtil.BindingPower.Init): string {
       match this
       case BLiteral(value) => if value then "true" else "false"
       case ILiteral(value) => Int2String(value)
-      case CustomLiteral(s, typ) => CustomLiteralToString(s, typ.ToString())
+      case CustomLiteral(s, typ) => PrintUtil.CustomLiteralToString(s, typ.ToString())
       case IdExpr(v) => v.name
       case OperatorExpr(op, args) =>
         var opStrength := op.BindingStrength();
-        ParenthesisWrap(opStrength <= contextStrength,
+        PrintUtil.ParenthesisWrap(opStrength, context,
           if op == Operator.IfThenElse && op.ArgumentCount() == |args| then
-            "if " + args[0].ToString() + " then " + args[1].ToString() + " els " + args[2].ToString(opStrength)
+            "if " + args[0].ToString() +
+            " then " + args[1].ToString() +
+            " else " + args[2].ToString(opStrength.SubexpressionPower(PrintUtil.Right, context))
           else if op.ArgumentCount() == 1 == |args| then
-            op.ToString() + args[0].ToString(opStrength)
+            op.ToString() + args[0].ToString(opStrength.SubexpressionPower(PrintUtil.Right, context))
           else if op.ArgumentCount() == 2 == |args| then
-            args[0].ToString(opStrength) + " " + op.ToString() + " " + args[1].ToString(opStrength)
+            args[0].ToString(opStrength.SubexpressionPower(PrintUtil.Left, context)) +
+            " " + op.ToString() + " " +
+            args[1].ToString(opStrength.SubexpressionPower(PrintUtil.Right, context))
           else
-            op.ToString() + ParenthesisWrap(true, ListToString(args)))
+            op.ToString() + "(" + ListToString(args) + ")")
       case FunctionCallExpr(func, args) =>
-        func.Name + ParenthesisWrap(true, ListToString(args))
+        func.Name + "(" + ListToString(args) + ")"
       case LabeledExpr(lbl, expr) =>
-        var opStrength := Operator.EndlessOperatorBindingStrength;
-        ParenthesisWrap(opStrength <= contextStrength, lbl.Name + ": " + expr.ToString(opStrength))
+        var opStrength := PrintUtil.BindingPower.EndlessOperator;
+        PrintUtil.ParenthesisWrap(opStrength, context,
+          lbl.Name + ": " + expr.ToString(opStrength.SubexpressionPower(PrintUtil.Right, context))
+        )
       case LetExpr(v, rhs, body) =>
-        var opStrength := Operator.EndlessOperatorBindingStrength;
-        ParenthesisWrap(opStrength <= contextStrength,
-          v.DeclToString() + " := " + rhs.ToString() + " " + body.ToString(opStrength)
+        var opStrength := PrintUtil.BindingPower.EndlessOperator;
+        PrintUtil.ParenthesisWrap(opStrength, context,
+          v.DeclToString() + " := " + rhs.ToString() + " " + body.ToString(opStrength.SubexpressionPower(PrintUtil.Right, context))
         )
       case QuantifierExpr(univ, vv, patterns, body) =>
-        var opStrength := Operator.EndlessOperatorBindingStrength;
-        ParenthesisWrap(opStrength <= contextStrength,
-          var opStrength := Operator.EndlessOperatorBindingStrength;
+        var opStrength := PrintUtil.BindingPower.EndlessOperator;
+        PrintUtil.ParenthesisWrap(opStrength, context,
+          var opStrength := PrintUtil.BindingPower.EndlessOperator;
           (if univ then "forall " else "exists ") +
           DeclsToString(vv) +
-          Pattern.ListToString(patterns) + " " + body.ToString(opStrength)
+          Pattern.ListToString(patterns) + " " + body.ToString(opStrength.SubexpressionPower(PrintUtil.Right, context))
         )
     }
 
@@ -482,13 +488,6 @@ module Ast {
         exprs[0].ToString()
       else
         exprs[0].ToString() + ", " + ListToString(exprs[1..])
-    }
-
-    static function ParenthesisWrap(useParentheses: bool, s: string): string {
-      if useParentheses then
-        "(" + s + ")"
-      else
-        s
     }
 
     static function CreateTrue(): (r: Expr)
@@ -555,9 +554,5 @@ module Ast {
       else
         " pattern " + Expr.ListToString(patterns[0].exprs) + ListToString(patterns[1..])
     }
-  }
-
-  function CustomLiteralToString(s: string, typeName: string): string {
-    "|" + s + ": " + typeName + "|"
   }
 }
