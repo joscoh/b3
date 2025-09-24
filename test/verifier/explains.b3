@@ -1,0 +1,16 @@
+// RUN: %verify "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+axiom explains F, G
+  false
+
+function F(): int
+
+function G(): int
+
+procedure Test() {
+  check F() == G() // yes, since this pulls in the axiom
+  check F() == 10 // error
+  check G() == 10 // error
+  check F() == 10 && G() == 10 // yes
+}

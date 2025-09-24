@@ -458,15 +458,17 @@ module RSolvers {
                 var axiom := explainedBy[i];
                 expect axiom in axiomMap; // TODO
                 if axiom !in state.declarations {
-                  assert axiom !in old(state.declarations);
-                  ghost var previousUndeclaredAxioms := AxiomsNotYetDeclared();
-                  assert previousUndeclaredAxioms <= old(AxiomsNotYetDeclared());
-                  state.AddDeclarationMarker(axiom);
-                  assert AxiomsNotYetDeclared() <= previousUndeclaredAxioms;
-                  assert axiom in previousUndeclaredAxioms && axiom !in AxiomsNotYetDeclared();
-                  var cond := axiomMap[axiom];
-                  DeclareNewSymbols(cond);
-                  state.AddAssumption(cond.ToSExpr(LiteralMapper()));
+                  if forall f <- axiom.Explains :: f in state.declarations {
+                    assert axiom !in old(state.declarations);
+                    ghost var previousUndeclaredAxioms := AxiomsNotYetDeclared();
+                    assert previousUndeclaredAxioms <= old(AxiomsNotYetDeclared());
+                    state.AddDeclarationMarker(axiom);
+                    assert AxiomsNotYetDeclared() <= previousUndeclaredAxioms;
+                    assert axiom in previousUndeclaredAxioms && axiom !in AxiomsNotYetDeclared();
+                    var cond := axiomMap[axiom];
+                    DeclareNewSymbols(cond);
+                    state.AddAssumption(cond.ToSExpr(LiteralMapper()));
+                  }
                 }
               }
             }

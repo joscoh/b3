@@ -58,6 +58,9 @@ Axiom ::=
     Expression
 ```
 
+The `explains` clause names a set of functions.
+The axiom is added to the antecedent of a proof obligation if all of the functions have been included in the proof obligation.
+
 ## Procedures
 
 ```
