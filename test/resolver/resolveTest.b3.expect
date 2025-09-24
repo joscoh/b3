@@ -418,3 +418,14 @@ procedure OptionalType(w: int, x: int, out r: int)
     r := y + z
   }
 }
+
+procedure Reinit(u: int, inout v: int, out w: int)
+{
+  return: {
+    var x: int
+    reinit v
+    reinit u, v, w
+    reinit x, v, w
+  }
+}
+reinit assignment to immutable variable 'u'

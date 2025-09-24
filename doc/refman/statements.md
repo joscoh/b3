@@ -6,6 +6,7 @@ Statements and expressions in B3 are self-terminating, so there are no semi-colo
 Stmt ::=
   | VarDecl
   | Assign
+  | Reinit
   | BlockStmt
   | Call
   // assertions
@@ -54,6 +55,15 @@ Assign ::=
 ```
 
 The identifier must be a mutable variable.
+
+## Re-init statements
+
+```
+Reinit ::=
+  reinit Identifier*,
+```
+
+This statement sets each of the named variables to an arbitrary value, subject to the auto-invariants of the variables.
 
 ## Block statements
 

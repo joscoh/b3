@@ -70,6 +70,8 @@ module AssignmentTargets {
       info.Remove(v)
     case Assign(lhs, _) =>
       StmtInformation([lhs], {lhs}, {Normal})
+    case Reinit(vars) =>
+      StmtInformation(vars, set v <- vars :: v, {Normal})
     case Block(stmts) =>
       BlockTargets(stmts)
     case Call(_, args) =>

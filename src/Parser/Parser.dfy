@@ -269,6 +269,7 @@ module Parser {
     Or([
          T("var").e_I(parseVariableDeclaration(true, c)),
          T("val").e_I(parseVariableDeclaration(false, c)),
+         T("reinit").e_I(parseNonemptyCommaDelimitedSeq(parseId)).M(ids => Reinit(ids)),
          T("exit").e_I(parseOptionalExitArgument()).M(optionalLabel => Exit(optionalLabel)),
          T("return").M(_ => Return),
          T("check").e_I(parseExpr).M(e => Check(e)),

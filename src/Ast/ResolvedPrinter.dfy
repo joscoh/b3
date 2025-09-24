@@ -132,6 +132,16 @@ module ResolvedPrinter {
       Expression(rhs);
       print "\n";
 
+    case Reinit(vars) =>
+      print "reinit ";
+      var sep := "";
+      for i := 0 to |vars| {
+        var v: Variable := vars[i];
+        print sep, v.name;
+        sep := ", ";
+      }
+      print "\n";
+
     case Block(stmts) =>
       print "{\n";
       StatementList(stmts, indent + IndentAmount);

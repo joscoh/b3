@@ -197,6 +197,7 @@ module RawAst {
   datatype Stmt =
     | VarDecl(v: Variable, init: Option<Expr>, body: Stmt)
     | Assign(lhs: string, rhs: Expr)
+    | Reinit(vars: seq<string>)
     | Block(stmts: seq<Stmt>)
     | Call(name: string, args: seq<CallArgument>)
     // assertions
@@ -267,6 +268,8 @@ module RawAst {
       case Assign(lhs, rhs) =>
         && lhs in scope
         && rhs.WellFormed(b3, scope)
+      case Reinit(vars) =>
+        forall name <- vars :: name in scope
       case Block(stmts) =>
         forall stmt <- stmts :: stmt.WellFormed(b3, scope, labels, insideLoop)
       case Call(name, args) =>

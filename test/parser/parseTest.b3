@@ -226,3 +226,11 @@ tagger ListTag for List
 
 function Nil(): List tag ListTag
 function Cons(injective head: int, injective tail: List): List tag ListTag
+
+// ------- reinit
+
+procedure Reinit(u: int, inout v: int, out w: int) {
+  var x: int
+  reinit v
+  reinit u, v, u, u, v, w
+}

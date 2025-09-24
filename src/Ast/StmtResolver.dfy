@@ -114,6 +114,23 @@ module StmtResolver {
         var right :- ResolveExpr(rhs, prs.ers, ls.varMap);
         r := Assign(left, right);
 
+      case Reinit(vars) =>
+        var resolvedVars := [];
+        for n := 0 to |vars|
+          invariant forall name <- vars[..n] :: name in ls.varMap
+          invariant forall i, j :: 0 <= i < j < |resolvedVars| ==> resolvedVars[i] != resolvedVars[j]
+        {
+          var name := vars[n];
+          if name !in ls.varMap {
+            return Failure("undeclared variable: " + name);
+          }
+          var v := ls.varMap[name];
+          if v !in resolvedVars {
+            resolvedVars := resolvedVars + [v];
+          }
+        }
+        r := Reinit(resolvedVars);
+
       case Block(stmts) =>
         var ss := [];
         for n := 0 to |stmts|

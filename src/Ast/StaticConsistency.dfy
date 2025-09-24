@@ -54,6 +54,8 @@ module StaticConsistency {
       ConsistentStmt(body)
     case Assign(lhs, rhs) =>
       lhs.IsMutable()
+    case Reinit(vars) =>
+      forall v: Variable <- vars :: v.IsMutable()
     case Block(stmts) =>
       forall s <- stmts :: ConsistentStmt(s)
     case Call(proc, args) =>
@@ -79,6 +81,7 @@ module StaticConsistency {
     case VarDecl(v, init, body) =>
       v.IsMutable() || init == None || ContainsNonAssertions(body)
     case Assign(_, _) => true
+    case Reinit(_) => true
     case Block(stmts) =>
       exists stmt <- stmts :: ContainsNonAssertions(stmt)
     case Call(_, _) => true
@@ -138,6 +141,15 @@ module StaticConsistency {
       case Assign(lhs, _) =>
         if !lhs.IsMutable() {
           return Fail("assignment to immutable variable '" + lhs.name + "'");
+        }
+      case Reinit(vars) =>
+        for n := 0 to |vars|
+          invariant forall v: Variable <- vars[..n] :: v.IsMutable()
+        {
+          var v: Variable := vars[n];
+          if !v.IsMutable() {
+            return Fail("reinit assignment to immutable variable '" + v.name + "'");
+          }
         }
       case Block(stmts) =>
         for n := 0 to |stmts|

@@ -133,6 +133,15 @@ module Printer {
       Expression(rhs);
       print "\n";
 
+    case Reinit(vars) =>
+      print "reinit ";
+      var sep := "";
+      for i := 0 to |vars| {
+        print sep, vars[i];
+        sep := ", ";
+      }
+      print "\n";
+
     case Block(stmts) =>
       print "{\n";
       StatementList(stmts, indent + IndentAmount);

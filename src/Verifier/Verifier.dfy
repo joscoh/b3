@@ -164,8 +164,19 @@ module Verifier {
     context := context_in;
     for n := 0 to |parameters| {
       var p := parameters[n];
-      if p.mode in modes && p.maybeAutoInv.Some? {
-        var autoInv := p.maybeAutoInv.value;
+      if p.mode in modes {
+        context := AssumeAutoInvariant(p, incarnations, context);
+      }
+    }
+  }
+
+  method AssumeAutoInvariant(variable: Variable, incarnations: I.Incarnations, context_in: RSolvers.RContext) returns (context: RSolvers.RContext)
+  {
+    context := context_in;
+    if variable is AutoInvVariable {
+      var av := variable as AutoInvVariable;
+      if av.maybeAutoInv.Some? {
+        var autoInv := av.maybeAutoInv.value;
         assume {:axiom} autoInv.WellFormed();
         var cond := incarnations.REval(autoInv);
         context := RSolvers.Extend(context, cond);
@@ -214,6 +225,19 @@ module Verifier {
       var sLhs;
       incarnations, sLhs := incarnations.Update(lhs);
       context := RSolvers.ExtendWithEquality(context, sLhs, sRhs);
+      Process(cont, incarnations, context, B, smtEngine);
+    case Reinit(vars) =>
+      for n := 0 to |vars|
+        invariant smtEngine.Valid()
+      {
+        var sv;
+        incarnations, sv := incarnations.Update(vars[n]);
+      }
+      for n := 0 to |vars|
+        invariant smtEngine.Valid()
+      {
+        context := AssumeAutoInvariant(vars[n], incarnations, context);
+      }
       Process(cont, incarnations, context, B, smtEngine);
     case Block(stmts) =>
       BC.AboutStmtSeqMeasureConcat(stmts, cont);

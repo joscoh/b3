@@ -97,6 +97,8 @@ module TypeChecker {
       && TypeCorrectStmt(body)
     case Assign(lhs, rhs) =>
       TypeCorrectExpr(rhs) && rhs.HasType(lhs.typ)
+    case Reinit(_) =>
+      true
     case Block(stmts) =>
       forall s <- stmts :: TypeCorrectStmt(s)
     case Call(proc, args) =>
@@ -262,6 +264,7 @@ module TypeChecker {
         :- CheckStmt(body);
       case Assign(lhs, rhs) =>
         :- TypeCheckAs(rhs, lhs.typ);
+      case Reinit(_) =>
       case Block(stmts) =>
         for n := 0 to |stmts|
           invariant forall s <- stmts[..n] :: TypeCorrectStmt(s)

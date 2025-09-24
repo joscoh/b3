@@ -255,3 +255,10 @@ procedure OptionalType(w: int, x: int, out r: int)
   var z := 5 + val u := if w < x then 2 else y u + u
   r := y + z
 }
+
+procedure Reinit(u: int, inout v: int, out w: int)
+{
+  var x: int
+  reinit v
+  reinit u, v, u, u, v, w
+}

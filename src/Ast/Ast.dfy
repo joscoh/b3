@@ -297,6 +297,7 @@ module Ast {
   datatype Stmt =
     | VarDecl(v: AutoInvVariable, initial: Option<Expr>, body: Stmt)
     | Assign(lhs: Variable, rhs: Expr)
+    | Reinit(vars: seq<Variable>)
     | Block(stmts: seq<Stmt>)
     | Call(proc: Procedure, args: seq<CallArgument>)
     // assertions
@@ -318,6 +319,8 @@ module Ast {
         && (initial.Some? ==> initial.value.WellFormed())
         && body.WellFormed()
       case Assign(_, rhs) => rhs.WellFormed()
+      case Reinit(vars) =>
+        forall i, j :: 0 <= i < j < |vars| ==> vars[i] != vars[j]
       case Block(stmts) => forall stmt <- stmts :: stmt.WellFormed()
       case Call(proc, args) =>
         && |args| == |proc.Parameters|
