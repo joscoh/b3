@@ -6,7 +6,7 @@ function Q(x: int): bool
 procedure P(b: bool) {
   var a := 2 * 3 + 4 * 5 * (6 + 7) * 8
   a := 2 + 3 - 4 + 5 - (6 + 7) - (8 - 9) - 10
-  a := 2 * 3 / 4 * 5 % (6 * 7) / (8 % 9) % 10
+  a := 2 * 3 div 4 * 5 mod (6 * 7) div (8 mod 9) mod 10
 
   assert (b && b && b) || (b && b)
   assert (b || b || b) && (b || b)
@@ -35,7 +35,7 @@ procedure R(out a: int, out b: bool) {
   a := 6 - (7 + 8) // parens needed
   a := 9 - (10 - 11) // parens needed
 
-  a := (3 + 4 * 5) / 6 // parens needed
+  a := (3 + 4 * 5) div 6 // parens needed
 
   b := (((b && b) || b) && b) || b // all parens needed
   b := b && (b || (b && (b || b))) // all parens needed

@@ -7,7 +7,7 @@ procedure P(b: bool)
   return: {
     var a: int := 2 * 3 + 4 * 5 * (6 + 7) * 8
     a := 2 + 3 - 4 + 5 - (6 + 7) - (8 - 9) - 10
-    a := 2 * 3 / 4 * 5 % (6 * 7) / (8 % 9) % 10
+    a := 2 * 3 div 4 * 5 mod (6 * 7) div (8 mod 9) mod 10
     assert (b && b && b) || (b && b)
     assert (b || b || b) && (b || b)
     assert (a < a) == (a <= a)
@@ -33,7 +33,7 @@ procedure R(out a: int, out b: bool)
     a := 3 + 4 - 5
     a := 6 - (7 + 8)
     a := 9 - (10 - 11)
-    a := (3 + 4 * 5) / 6
+    a := (3 + 4 * 5) div 6
     b := (((b && b) || b) && b) || b
     b := b && (b || (b && (b || b)))
   }

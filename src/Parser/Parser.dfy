@@ -383,16 +383,16 @@ module Parser {
 
   /* Here is the expression grammar (but not formulated as an LL(1) grammar).
    *
-   * Expr ::= ( ImpExpExpr "<==>" )* ImpExpExpr                    // associates to the left
-   * ImpExpExpr ::= ImpliesExpr | ExpliesExpr                      // needs disambiguation after parsing one LogicalExpr
-   * ImpliesExpr ::= LogicalExpr "==>" ImpliesExpr                 // associates to the right
-   * ExpliesExpr ::= ( LogicalExpr "<==" )* LogicalExpr            // associates to the left
-   * LogicalExpr ::= AndExpr | OrExpr                              // needs disambiguation after parsing one JunctExpr
-   * AndExpr ::= ( JuctExpr "&&" )* JuctExpr                       // associates to the left
-   * OrExpr ::= ( JuctExpr "||" )* JuctExpr                        // associates to the left
+   * Expr ::= ( ImpExpExpr "<==>" )* ImpExpExpr                     // associates to the left
+   * ImpExpExpr ::= ImpliesExpr | ExpliesExpr                       // needs disambiguation after parsing one LogicalExpr
+   * ImpliesExpr ::= LogicalExpr "==>" ImpliesExpr                  // associates to the right
+   * ExpliesExpr ::= ( LogicalExpr "<==" )* LogicalExpr             // associates to the left
+   * LogicalExpr ::= AndExpr | OrExpr                               // needs disambiguation after parsing one JunctExpr
+   * AndExpr ::= ( JuctExpr "&&" )* JuctExpr                        // associates to the left
+   * OrExpr ::= ( JuctExpr "||" )* JuctExpr                         // associates to the left
    * JuctExpr ::= TermExpr [ ( "==" | "!=" | "<" | "<=" | ">=" | ">" ) TermExpr ]
-   * TermExpr ::= ( FactorExpr ( "+" | "-" ))* FactorExpr          // associates to the left
-   * FactorExpr ::= ( UnaryExpr ( "*" | "/" | "%" ))* UnaryExpr    // associates to the left
+   * TermExpr ::= ( FactorExpr ( "+" | "-" ))* FactorExpr           // associates to the left
+   * FactorExpr ::= ( UnaryExpr ( "*" | "div" | "mod" ))* UnaryExpr // associates to the left
    * UnaryExpr ::= ( "!" | "-" )* PrimaryExpr
    * PrimaryExpr ::= EndlessExpr
    *               | AtomicExpr
@@ -475,8 +475,8 @@ module Parser {
     parseUnaryExpr(c).Then(e0 =>
       Or([
         Sym("*").M(_ => Operator.Times),
-        Sym("/").M(_ => Operator.Div),
-        Sym("%").M(_ => Operator.Mod)
+        T("div").M(_ => Operator.Div),
+        T("mod").M(_ => Operator.Mod)
       ]).I_I(parseUnaryExpr(c)).Rep()
       .M(opExprs => FoldLeft(e0, opExprs, (a, b: (Operator, Expr)) => OperatorExpr(b.0, [a, b.1])))
     )

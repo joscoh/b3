@@ -406,8 +406,8 @@ module RawAst {
       case Plus => "+"
       case Minus | UnaryMinus => "-"
       case Times => "*"
-      case Div => "/"
-      case Mod => "%"
+      case Div => "div"
+      case Mod => "mod"
       case LogicalNot => "!"
     }
 

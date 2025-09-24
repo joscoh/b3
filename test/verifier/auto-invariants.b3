@@ -85,7 +85,7 @@ procedure TestLoops(
   n: int)
   requires 0 <= n
 {
-  var a: int autoinv a % 2 == 0
+  var a: int autoinv a mod 2 == 0
   var b: int
   var c: int := 15
 
@@ -107,7 +107,7 @@ procedure TestLoops(
 
   check i == n
   check c == 15
-  check a % 2 == 0
+  check a mod 2 == 0
   check P(x, 10)
   check P(old$y, y) && P(y, 20)
   check P(z, 30)
