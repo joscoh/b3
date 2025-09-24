@@ -218,12 +218,12 @@ module Parser {
          Nothing.M(_ => ParameterMode.In)
        ])
 
-  const parseProcFormal: B<Parameter> :=
+  const parseProcFormal: B<PParameter> :=
     parseParameterMode.Then((mode: ParameterMode) =>
       parseIdType.Then((idType: (string, Types.TypeName)) =>
         var (name, typ) := idType;
           parseOptionalAutoInvariant.M(optionalAutoInv =>
-            Parameter(name, mode, typ, optionalAutoInv))))
+            PParameter(name, mode, typ, optionalAutoInv))))
 
   const parseIdType: B<(string, Types.TypeName)> :=
     parseId.I_I(Sym(":").e_I(parseType))

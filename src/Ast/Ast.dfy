@@ -10,10 +10,10 @@ module Ast {
   export
     reveals NamedDecl, NamedDecl.Distinct, TypeDecl, Type
     provides NamedDecl.Name, Type.ToString
-    reveals Program, Type, Variable, Procedure, Label, Parameter, LocalVariable
+    reveals Program, Type, Variable, Procedure, Label, PParameter, LocalVariable
     reveals Expr, Operator, ParameterMode, AExpr, Stmt, CallArgument
     reveals AutoInvVariable
-    reveals Program.WellFormed, Procedure.WellFormed, Parameter.WellFormed, AExpr.WellFormed, Stmt.WellFormed, Expr.WellFormed, CallArgument.WellFormed
+    reveals Program.WellFormed, Procedure.WellFormed, PParameter.WellFormed, AExpr.WellFormed, Stmt.WellFormed, Expr.WellFormed, CallArgument.WellFormed
     reveals CallArgument.CorrespondingMode
     provides Procedure.Parameters, Procedure.Pre, Procedure.Post, Procedure.Body
     reveals Procedure.SignatureCorrespondence, Procedure.WellFormedHeader
@@ -23,9 +23,9 @@ module Ast {
     reveals Axiom, Axiom.WellFormed
     provides Axiom.Explains, Axiom.Expr
     provides Variable.name, Variable.typ
-    provides Variable.IsMutable, LocalVariable.IsMutable, Parameter.IsMutable, FParameter.IsMutable
+    provides Variable.IsMutable, LocalVariable.IsMutable, PParameter.IsMutable, FParameter.IsMutable
     provides AutoInvVariable.maybeAutoInv
-    provides Parameter.mode, Parameter.oldInOut
+    provides PParameter.mode, PParameter.oldInOut
     provides Label.Name
     reveals Stmt.IsPredicateStmt
     reveals Expr.ExprType, Expr.HasType
@@ -103,12 +103,12 @@ module Ast {
   }
 
   class Procedure extends NamedDecl {
-    const Parameters: seq<Parameter>
+    const Parameters: seq<PParameter>
     const Pre: seq<AExpr>
     const Post: seq<AExpr>
     var Body: Option<Stmt>
 
-    constructor (name: string, parameters: seq<Parameter>, pre: seq<AExpr>, post: seq<AExpr>)
+    constructor (name: string, parameters: seq<PParameter>, pre: seq<AExpr>, post: seq<AExpr>)
       ensures Name == name && Parameters == parameters
       ensures Pre == pre && Post == post && Body == None
     {
@@ -143,7 +143,7 @@ module Ast {
     }
   }
 
-  class Parameter extends AutoInvVariable {
+  class PParameter extends AutoInvVariable {
     const mode: ParameterMode
     const oldInOut: Option<Variable>
 

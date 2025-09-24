@@ -482,7 +482,7 @@ module Resolver {
     ensures r.Success? ==> fresh(r.value) && r.value.SignatureCorrespondence(proc) && r.value.WellFormed()
   {
     var paramMap: map<string, Variable> := map[];
-    var formals: seq<Parameter> := [];
+    var formals: seq<PParameter> := [];
     for n := 0 to |proc.parameters|
       invariant forall p <- proc.parameters[..n] :: Raw.LegalVariableName(p.name) && ers.b3.IsType(p.typ)
       invariant forall i, j :: 0 <= i < j < n ==> proc.parameters[i].name != proc.parameters[j].name
@@ -513,7 +513,7 @@ module Resolver {
         oldInOut := None;
       }
 
-      var formal := new Parameter(p.name, p.mode, typ, oldInOut);
+      var formal := new PParameter(p.name, p.mode, typ, oldInOut);
       paramMap := paramMap[p.name := formal];
       formals := formals + [formal];
     }

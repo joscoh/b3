@@ -104,7 +104,7 @@ module RawAst {
 
   // Procedures
 
-  datatype Procedure = Procedure(name: string, parameters: seq<Parameter>, pre: seq<AExpr>, post: seq<AExpr>, body: Option<Stmt>)
+  datatype Procedure = Procedure(name: string, parameters: seq<PParameter>, pre: seq<AExpr>, post: seq<AExpr>, body: Option<Stmt>)
   {
     function AllParameterNames(): set<string> {
       (set p <- parameters :: p.name) + (set p <- parameters | p.mode == InOut :: OldName(p.name))
@@ -114,7 +114,7 @@ module RawAst {
       // parameters have legal names and valid types
       && (forall p <- parameters :: LegalVariableName(p.name) && b3.IsType(p.typ))
       // formal parameters have distinct names
-      && Parameter.UniqueNames(parameters)
+      && PParameter.UniqueNames(parameters)
       // set up the scopes: precondition, postcondition, body
       && var preScope := set p <- parameters | p.mode.IsIncoming() :: p.name;
       && var postScope := AllParameterNames();
@@ -144,13 +144,13 @@ module RawAst {
     }
   }
 
-  datatype Parameter = Parameter(name: string, mode: ParameterMode, typ: TypeName, optionalAutoInv: Option<Expr>)
+  datatype PParameter = PParameter(name: string, mode: ParameterMode, typ: TypeName, optionalAutoInv: Option<Expr>)
   {
-    static predicate UniqueNames(parameters: seq<Parameter>) {
+    static predicate UniqueNames(parameters: seq<PParameter>) {
       && (forall i, j :: 0 <= i < j < |parameters| ==> parameters[i].name != parameters[j].name)
     }
 
-    static predicate UniquelyNamed(parameters: set<Parameter>) {
+    static predicate UniquelyNamed(parameters: set<PParameter>) {
       forall p0 <- parameters, p1 <- parameters :: p0.name == p1.name ==> p0 == p1
     }
   }

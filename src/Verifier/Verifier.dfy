@@ -95,7 +95,7 @@ module Verifier {
     }
   }
 
-  method CreateProcIncarnations(parameters: seq<Parameter>, declMap: I.DeclMappings)
+  method CreateProcIncarnations(parameters: seq<PParameter>, declMap: I.DeclMappings)
       returns (preIncarnations: I.Incarnations, bodyIncarnations: I.Incarnations, postIncarnations: I.Incarnations)
     requires forall i :: 0 <= i < |parameters| ==> parameters[i].WellFormed()
   {
@@ -157,7 +157,7 @@ module Verifier {
     }
   }
 
-  method AssumeAutoInvariants(parameters: seq<Parameter>, modes: set<ParameterMode>,
+  method AssumeAutoInvariants(parameters: seq<PParameter>, modes: set<ParameterMode>,
                               incarnations: I.Incarnations, context_in: RSolvers.RContext)
       returns (context: RSolvers.RContext)
   {
