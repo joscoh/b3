@@ -1,2 +1,3 @@
 Verifying TestLoops ...
 Error: Failed to prove check i == 11
+  choose alternative 0

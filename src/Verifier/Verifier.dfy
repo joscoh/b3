@@ -258,9 +258,10 @@ module Verifier {
       for i := 0 to |branches|
         invariant smtEngine.Valid()
       {
+        var ctx := RSolvers.RecordTracePoint(context, "choose alternative " + Int2String(i));
         BC.StmtSeqElement(branches, i);
         BC.StmtMeasurePrepend(branches[i], cont);
-        Process([branches[i]] + cont, incarnations, context, B, smtEngine);
+        Process([branches[i]] + cont, incarnations, ctx, B, smtEngine);
       }
     case Loop(_, _) =>
       // `cont` is ignored, since a `loop` never has any normal exit
@@ -495,8 +496,9 @@ module Verifier {
     case Proved =>
     case Unproved(reason) =>
       print "Error: Failed to prove ", errorText, " ", errorReportingInfo.ToString(), "\n";
-      if "rprint" in smtEngine.Options {
-        print "Proof-failure context: ", reason, "\n";
+      RSolvers.PrintTrace(context);
+      if "solver-failure" in smtEngine.Options {
+        print "Low-level proof-failure context: ", reason, "\n";
       }
   }
 }

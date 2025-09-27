@@ -43,6 +43,7 @@ Verifying TestTypeUse ...
 Verifying UseQuantifier ...
 ----- Proof obligation:
   (forall s: MyString pattern Stringy(s) =>(not(=(s, t)), Stringy(s)))
+  =(probe%1, true)
   not(=(t, u))
   |-
   Stringy(u)

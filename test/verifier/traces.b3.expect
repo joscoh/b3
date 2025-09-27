@@ -1,0 +1,35 @@
+Verifying Test ...
+Error: Failed to prove check y == 12
+  choose alternative 1
+  choose alternative 0
+  choose alternative 0
+  choose alternative 0
+  probe%10
+  choose alternative 1
+Error: Failed to prove check y == 12
+  choose alternative 1
+  choose alternative 0
+  choose alternative 0
+  choose alternative 1
+  choose alternative 1
+Error: Failed to prove check y == 12
+  choose alternative 1
+  choose alternative 0
+  choose alternative 1
+  choose alternative 0
+Error: Failed to prove check y == 12
+  choose alternative 1
+  choose alternative 0
+  choose alternative 1
+  choose alternative 1
+  choose alternative 0
+  choose alternative 1
+Error: Failed to prove check y == 12
+  choose alternative 1
+  choose alternative 0
+  choose alternative 1
+  choose alternative 1
+  choose alternative 1
+  choose alternative 0
+  probe%14
+  choose alternative 1

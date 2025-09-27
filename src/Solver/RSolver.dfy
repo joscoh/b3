@@ -16,7 +16,8 @@ module RSolvers {
   export
     reveals RExpr, ROperator, RPattern
     provides RExpr.Eq, RExpr.Operator2ROperator, RExpr.OperatorToString
-    provides RContext, CreateEmptyContext, Extend, ExtendWithEquality, Record
+    provides RContext, CreateEmptyContext, Extend, ExtendWithEquality
+    provides Record, RecordTracePoint, PrintTrace
     reveals REngine
     provides CreateEngine, REngine.Repr, REngine.Valid, REngine.Prove, REngine.Options
     provides SolverExpr, Solvers, Ast, CLI, Wrappers
@@ -217,6 +218,10 @@ module RSolvers {
     method Print()
       requires Valid()
       decreases depth
+
+    method PrintTrace()
+      requires Valid()
+      decreases depth
   }
 
   class RContextRoot extends RContext_ {
@@ -232,14 +237,20 @@ module RSolvers {
       depth := 0;
     }
 
+    lemma JustTwoSubtypes()
+      ensures this is RContextRoot
+    {
+    }
+
     method Print()
       requires Valid()
       decreases depth
     {
     }
 
-    lemma JustTwoSubtypes()
-      ensures this is RContextRoot
+    method PrintTrace()
+      requires Valid()
+      decreases depth
     {
     }
   }
@@ -247,6 +258,7 @@ module RSolvers {
   class RContextNode extends RContext_ {
     const parent: RContext_
     const expr: RExpr
+    const traceString: Option<string>
 
     ghost predicate Valid()
       decreases depth
@@ -255,12 +267,18 @@ module RSolvers {
       parent.Valid()
     }
 
-    constructor (parent: RContext, expr: RExpr)
+    constructor (parent: RContext, expr: RExpr, traceString: Option<string>)
       ensures Valid()
     {
       this.depth := parent.depth + 1;
       this.parent := parent;
       this.expr := expr;
+      this.traceString := traceString;
+    }
+
+    lemma JustTwoSubtypes()
+      ensures this is RContextNode
+    {
     }
 
     method Print()
@@ -271,13 +289,22 @@ module RSolvers {
       print "  ", expr.ToString(), "\n";
     }
 
-    lemma JustTwoSubtypes()
-      ensures this is RContextNode
+    method PrintTrace()
+      requires Valid()
+      decreases depth
     {
+      parent.PrintTrace();
+      match traceString
+      case None =>
+      case Some(s) => print "  ", s, "\n";
     }
   }
 
   type RContext = r: RContext_ | r.Valid() witness *
+
+  method PrintTrace(context: RContext) {
+    context.PrintTrace();
+  }
 
   method PrintProofObligation(context: RContext, expr: RExpr) {
     print "----- Proof obligation:\n";
@@ -290,19 +317,23 @@ module RSolvers {
     context := new RContextRoot();
   }
   
-  method Extend(context: RContext, expr: RExpr) returns (r: RContext) {
-    r := new RContextNode(context, expr);
+  method Extend(context: RContext, expr: RExpr, traceString: Option<string> := None) returns (r: RContext) {
+    r := new RContextNode(context, expr, traceString);
   }
 
   method ExtendWithEquality(context: RContext, sv: SolverExpr.SConstant, expr: RExpr) returns (r: RContext) {
-    r := Extend(context, RExpr.Eq(RExpr.Id(sv), expr));
+    r := Extend(context, RExpr.Eq(RExpr.Id(sv), expr), None);
   }
 
-  method Record(context: RContext, expr: RExpr, typ: SolverExpr.SType) returns (r: RContext) {
+  method Record(context: RContext, expr: RExpr, typ: SolverExpr.SType, traceString: Option<string> := None) returns (r: RContext) {
     var name := "probe%" + Int2String(context.depth);
     var p := new SolverExpr.SConstant(name, typ);
     var eq := RExpr.Eq(RExpr.Id(p), expr);
-    r := Extend(context, eq);
+    r := Extend(context, eq, if traceString.Some? then traceString else Some(name));
+  }
+
+  method RecordTracePoint(context: RContext, traceString: string) returns (r: RContext) {
+    r := Record(context, Boolean(true), SolverExpr.SBool, Some(traceString));
   }
 
   // ===== REngine =====

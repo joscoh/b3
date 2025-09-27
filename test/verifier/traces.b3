@@ -1,0 +1,58 @@
+// RUN: %verify "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+procedure Test(x: int, out y: int)
+  ensures y == 12
+{
+  var a := 10
+
+  if x < 100 { // alternative 0
+    a := a + 1
+    check a == 11
+
+  } else if x < 200 { // alternative 1 0
+    a := a + 1
+    choose { // alternative ... 0
+      a := a + 10
+      check a == 21
+      
+      if
+      case x == 183 { // alternative .. 0
+        probe x + x
+        a := a + 3
+      }
+      case x < 250 { // alternative .. 1
+        a := a + 4
+      }
+      check a == 24 || a == 25
+
+    } or { // alternative ... 1
+      a := a + 8
+      check a == 19
+
+      MyLabel: {
+        if x == y { // alternative ... 0
+          return
+        } else if x == y + 1 { // alternative ... 1 0
+          a := 23
+          exit MyLabel
+        } else if x == y + 2 { // alternative ... 1 1 0
+          probe true
+          a := 23
+        } else { // alternative ... 1 1 1
+          a := 22
+          exit MyLabel
+        }
+      }
+    }
+  } else { // alternative 1 1
+    a := a + 9
+    check a == 19
+  }
+
+  if a < 20 { // alternative ... 0
+    y := 12
+  } else {
+    y := a - 10 // alternative ... 1
+  }
+}
