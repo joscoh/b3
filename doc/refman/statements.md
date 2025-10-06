@@ -97,10 +97,10 @@ Check ::=
   check Expression
 ```
 
-A check statement prescribes a proof obligation. It is an error if control flow can reach a `check`
-statement whose expression can evaluate to `false`.
+The statement `check e` describes the intention that every program trace that leads to
+this statement finds `e` to evaluate `true`.
 
-The given expression 
+It is an error if control flow can reach a `check` statement whose expression can evaluate to `false`.
 
 ## Assume statements
 
@@ -108,6 +108,20 @@ The given expression
 Assume ::=
   assume Expression
 ```
+
+The statement `assume e` declares that a program trace that leads to this statement is of interest
+only if, in that trace, `e` to evaluate `true`. In other words, the assume statement says that
+"what follows this statement is of interest only if `e` evaluates to `true`".
+
+## Reach statements
+
+```
+Reach ::=
+  reach Expression
+```
+
+The statement `reach e` describes the intention that there exists a program trace that leads to
+this statement and finds `e` to evaluate `true`.
 
 ## Assert statements
 

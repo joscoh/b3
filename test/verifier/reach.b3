@@ -1,0 +1,19 @@
+// RUN: %verify "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+procedure Test(x: int)
+  requires x < 100
+{
+  reach true
+  reach false // error: not reached
+  if x == 9 {
+  } else if x == 120 {
+    reach true // error: not reached
+  } else {
+    reach x == 9 // error: not reached
+    reach x < 100
+  }
+
+  return
+  reach true // error: not reached
+}

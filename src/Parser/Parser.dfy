@@ -303,6 +303,7 @@ module Parser {
          T("return").M(_ => Return),
          T("check").e_I(parseExpr).M(e => Check(e)),
          T("assume").e_I(parseExpr).M(e => Assume(e)),
+         T("reach").e_I(parseExpr).M(e => Reach(e)),
          T("assert").e_I(parseExpr).M(e => Assert(e)),
          T("probe").e_I(parseExpr).M(e => Probe(e)),
          T("forall").e_I(parseIdType).I_I(c("block")).M3(Unfold3l, (name, typ, body) => AForall(name, typ, body)),

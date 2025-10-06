@@ -80,7 +80,7 @@ module TypeChecker {
     requires aexpr.WellFormed()
   {
     match aexpr
-    case AExpr(e) =>
+    case AExpr(e, _) =>
       TypeCorrectExpr(e) && e.HasType(BoolType)
     case AAssertion(s) =>
       TypeCorrectStmt(s)
@@ -103,11 +103,13 @@ module TypeChecker {
       forall s <- stmts :: TypeCorrectStmt(s)
     case Call(proc, args) =>
       forall arg <- args :: TypeCorrectCallArg(arg)
-    case Check(cond) =>
+    case Check(cond, _) =>
       TypeCorrectExpr(cond)
     case Assume(cond) =>
       TypeCorrectExpr(cond)
-    case Assert(cond) =>
+    case Reach(cond, _) =>
+      TypeCorrectExpr(cond)
+    case Assert(cond, _) =>
       TypeCorrectExpr(cond)
     case AForall(_, body) =>
       TypeCorrectStmt(body)
@@ -212,7 +214,7 @@ module TypeChecker {
     {
       assert aexprs[n].WellFormed();
       match aexprs[n]
-      case AExpr(e) =>
+      case AExpr(e, _) =>
         outcome := TypeCheckAs(e, BoolType);
         if outcome.IsFailure() {
           return Fail(outcome.error);
@@ -283,11 +285,13 @@ module TypeChecker {
           case OutgoingArgument(_, arg) =>
             :- ExpectType(arg.typ, formal.typ);
         }
-      case Check(cond) =>
+      case Check(cond, _) =>
         :- TypeCheckAs(cond, BoolType);
       case Assume(cond) =>
         :- TypeCheckAs(cond, BoolType);
-      case Assert(cond) =>
+      case Reach(cond, _) =>
+        :- TypeCheckAs(cond, BoolType);
+      case Assert(cond, _) =>
         :- TypeCheckAs(cond, BoolType);
       case AForall(_, body) =>
         :- CheckStmt(body);

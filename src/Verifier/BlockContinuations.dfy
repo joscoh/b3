@@ -61,9 +61,10 @@ module BlockContinuations {
     case Reinit(_) => 1
     case Block(stmts) => 1 + StmtSeqMeasure(stmts)
     case Call(proc, _) => 1
-    case Check(_) => 1
+    case Check(_, _) => 1
     case Assume(_) => 1
-    case Assert(_) => 2
+    case Reach(_, _) => 1
+    case Assert(_, _) => 2
     case AForall(_, body) => 1 + StmtMeasure(body)
     case Choose(branches) => 1 + StmtSeqMeasure(branches)
     case Loop(invariants, body) => 1 + AExprsMeasure(invariants, stmt) + 4 * |invariants| + StmtMeasure(body)
@@ -85,7 +86,7 @@ module BlockContinuations {
     else
       SeqContentsSplit(aexprs);
       match aexprs[0] {
-        case AExpr(e) => 1
+        case AExpr(e, _) => 1
         case AAssertion(s) => 1 + StmtMeasure(s)
       } +
       AExprsMeasure(aexprs[1..], parent)

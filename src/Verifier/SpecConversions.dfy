@@ -23,8 +23,8 @@ module SpecConversions {
       var ae, rest := spec[0], ToCheck(spec[1..]);
       assert AstValid.AExpr(ae);
       match ae
-      case AExpr(cond) =>
-        [Check(cond)] + rest
+      case AExpr(cond, location) =>
+        [Check(cond, location)] + rest
       case AAssertion(s) =>
         var L := Learn(s);
         [Assume(L)] + rest
@@ -40,7 +40,7 @@ module SpecConversions {
       var ae, rest := spec[0], ToLearn(spec[1..]);
       assert AstValid.AExpr(ae);
       match ae
-      case AExpr(cond) =>
+      case AExpr(cond, _) =>
         [Assume(cond)] + rest
       case AAssertion(s) =>
         var L := Learn(s);
@@ -57,11 +57,11 @@ module SpecConversions {
     case Block(stmts) =>
       var ll := SeqMap(stmts, (s: Stmt) requires s in stmts => Learn(s));
       Expr.CreateBigAnd(ll)
-    case Check(_) =>
+    case Check(_, _) =>
       Expr.CreateTrue()
     case Assume(e) =>
       e
-    case Assert(e) =>
+    case Assert(e, _) =>
       e
     case AForall(v, body) =>
       Expr.CreateForall(v, Learn(body))

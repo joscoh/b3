@@ -164,6 +164,9 @@ module Printer {
     case Assume(e) =>
       ExpressionStmt("assume", e);
 
+    case Reach(e) =>
+      ExpressionStmt("reach", e);
+
     case Assert(e) =>
       ExpressionStmt("assert", e);
 

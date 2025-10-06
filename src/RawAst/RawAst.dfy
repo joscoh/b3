@@ -203,6 +203,7 @@ module RawAst {
     // assertions
     | Check(cond: Expr)
     | Assume(cond: Expr)
+    | Reach(cond: Expr)
     | Assert(cond: Expr)
     | AForall(name: string, typ: TypeName, body: Stmt)
     // Control flow
@@ -284,6 +285,8 @@ module RawAst {
       case Check(cond) =>
         cond.WellFormed(b3, scope)
       case Assume(cond) =>
+        cond.WellFormed(b3, scope)
+      case Reach(cond) =>
         cond.WellFormed(b3, scope)
       case Assert(cond) =>
         cond.WellFormed(b3, scope)

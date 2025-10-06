@@ -11,7 +11,7 @@ module Ast {
     reveals NamedDecl, NamedDecl.Distinct, TypeDecl, Type
     provides NamedDecl.Name, Type.ToString
     reveals Program, Type, Variable, Procedure, Label, PParameter, LocalVariable
-    reveals Expr, Operator, ParameterMode, AExpr, Stmt, CallArgument
+    reveals Expr, Operator, ParameterMode, AExpr, Location, Stmt, CallArgument
     reveals AutoInvVariable
     reveals Program.WellFormed, Procedure.WellFormed, PParameter.WellFormed, AExpr.WellFormed, Stmt.WellFormed, Expr.WellFormed, CallArgument.WellFormed
     reveals CallArgument.CorrespondingMode
@@ -27,6 +27,7 @@ module Ast {
     provides AutoInvVariable.maybeAutoInv
     provides PParameter.mode, PParameter.oldInOut
     provides Label.Name
+    provides Location.description
     reveals Stmt.IsPredicateStmt
     reveals Expr.ExprType, Expr.HasType
     provides Expr.ToString
@@ -294,6 +295,14 @@ module Ast {
     }
   }
 
+  class Location {
+    const description: string
+
+    constructor (description: string) {
+      this.description := description;
+    }
+  }
+
   datatype Stmt =
     | VarDecl(v: AutoInvVariable, initial: Option<Expr>, body: Stmt)
     | Assign(lhs: Variable, rhs: Expr)
@@ -301,9 +310,10 @@ module Ast {
     | Block(stmts: seq<Stmt>)
     | Call(proc: Procedure, args: seq<CallArgument>)
     // assertions
-    | Check(cond: Expr)
+    | Check(cond: Expr, location: Location)
     | Assume(cond: Expr)
-    | Assert(cond: Expr)
+    | Reach(cond: Expr, location: Location)
+    | Assert(cond: Expr, location: Location)
     | AForall(bv: Variable, body: Stmt)
     // Control flow
     | Choose(branches: seq<Stmt>)
@@ -326,9 +336,10 @@ module Ast {
         && |args| == |proc.Parameters|
         && (forall i :: 0 <= i < |args| ==> args[i].CorrespondingMode() == proc.Parameters[i].mode)
         && (forall arg <- args :: arg.WellFormed())
-      case Check(cond) => cond.WellFormed()
+      case Check(cond, _) => cond.WellFormed()
       case Assume(cond) => cond.WellFormed()
-      case Assert(cond) => cond.WellFormed()
+      case Reach(cond, _) => cond.WellFormed()
+      case Assert(cond, _) => cond.WellFormed()
       case AForall(_, body) => body.WellFormed()
       case Choose(branches) =>
         forall branch <- branches :: branch.WellFormed()
@@ -341,7 +352,7 @@ module Ast {
     }
     
     predicate IsPredicateStmt() {
-      Check? || Assume? || Assert?
+      Check? || Assume? || Reach? || Assert?
     }
   }
 
@@ -365,12 +376,12 @@ module Ast {
   }
 
   datatype AExpr =
-    | AExpr(e: Expr)
+    | AExpr(e: Expr, location: Location)
     | AAssertion(s: Stmt)
   {
     predicate WellFormed() {
       match this
-      case AExpr(e) => e.WellFormed()
+      case AExpr(e, _) => e.WellFormed()
       case AAssertion(s) => s.WellFormed()
     }
   }

@@ -147,15 +147,22 @@ module StmtResolver {
 
       case Check(cond) =>
         var c :- ResolveExpr(cond, prs.ers, ls.varMap);
-        r := Check(c);
+        var location := new Location("check " + c.ToString());
+        r := Check(c, location);
 
       case Assume(cond) =>
         var c :- ResolveExpr(cond, prs.ers, ls.varMap);
         r := Assume(c);
 
+      case Reach(cond) =>
+        var c :- ResolveExpr(cond, prs.ers, ls.varMap);
+        var location := new Location("reach " + c.ToString());
+        r := Reach(c, location);
+
       case Assert(cond) =>
         var c :- ResolveExpr(cond, prs.ers, ls.varMap);
-        r := Assert(c);
+        var location := new Location("assert " + c.ToString());
+        r := Assert(c, location);
 
       case AForall(name, typ, body) =>
         if !Raw.LegalVariableName(name) {
@@ -337,7 +344,8 @@ module StmtResolver {
     match aexpr
     case AExpr(e) =>
       var expr :- ResolveExpr(e, ers, ls.varMap);
-      return Success(AExpr(expr));
+      var location := new Location("check " + expr.ToString());
+      return Success(AExpr(expr, location));
     case AAssertion(s) =>
       var prs := ProcResolverState(ers, None);
       var stmt :- ResolveStmt(s, prs, ls.(labelMap := map[], loopLabel := None));

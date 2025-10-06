@@ -41,7 +41,7 @@ module StaticConsistency {
     requires aexpr.WellFormed()
   {
     match aexpr
-    case AExpr(e) => true
+    case AExpr(e, _) => true
     case AAssertion(s) =>
       ConsistentStmt(s) && !ContainsNonAssertions(s)
   }
@@ -60,9 +60,10 @@ module StaticConsistency {
       forall s <- stmts :: ConsistentStmt(s)
     case Call(proc, args) =>
       forall i :: 0 <= i < |args| ==> proc.Parameters[i].mode == args[i].CorrespondingMode()
-    case Check(cond) => true
+    case Check(cond, _) => true
     case Assume(cond) => true
-    case Assert(cond) => true
+    case Reach(cond, _) => true
+    case Assert(cond, _) => true
     case AForall(_, body) =>
       ConsistentStmt(body) && !ContainsNonAssertions(body)
     case Choose(branches) =>
@@ -85,9 +86,10 @@ module StaticConsistency {
     case Block(stmts) =>
       exists stmt <- stmts :: ContainsNonAssertions(stmt)
     case Call(_, _) => true
-    case Check(_) => false
+    case Check(_, _) => false
     case Assume(_) => false
-    case Assert(_) => false
+    case Reach(_, _) => true
+    case Assert(_, _) => false
     case AForall(_, body) =>
       ContainsNonAssertions(body)
     case Choose(branches) =>
@@ -123,7 +125,7 @@ module StaticConsistency {
     ensures outcome.Pass? ==> ConsistentAExpr(aexpr)
   {
     match aexpr
-    case AExpr(_) =>
+    case AExpr(_, _) =>
       return Pass;
     case AAssertion(s) =>
       :- CheckStmt(s);
@@ -169,9 +171,10 @@ module StaticConsistency {
             return Fail("incorrect parameter mode; expected " + a + "-parameter, got " + b + "-parameter");
           }
         }
-      case Check(_) =>
+      case Check(_, _) =>
       case Assume(_) =>
-      case Assert(_) =>
+      case Reach(_, _) =>
+      case Assert(_, _) =>
       case AForall(_, body) =>
         :- CheckStmt(body);
         if ContainsNonAssertions(body) {
@@ -216,9 +219,11 @@ module StaticConsistency {
         {
           :- CheckCanBeUsedInAssertion(stmts[n]);
         }
-      case Check(_) =>
+      case Check(_, _) =>
       case Assume(_) =>
-      case Assert(_) =>
+      case Reach(cond, _) =>
+        return Fail("reach statements are not allowed in assertions: " + cond.ToString());
+      case Assert(_, _) =>
       case AForall(_, body) =>
         :- CheckCanBeUsedInAssertion(body);
       case Choose(branches) =>

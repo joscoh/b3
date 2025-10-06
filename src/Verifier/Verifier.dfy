@@ -63,6 +63,14 @@ module Verifier {
     }
   }
 
+  class ProcedureOutcomes {
+    var reachableReachStatements: set<Location>
+
+    constructor () {
+      reachableReachStatements := {};
+    }
+  }
+
   method VerifyProcedure(proc: Ast.Procedure, context_in: RSolvers.RContext, declMap: I.DeclMappings, axiomMap: map<Axiom, RSolvers.RExpr>, options: CLI.CliOptions)
     requires AstValid.Procedure(proc)
   {
@@ -91,7 +99,9 @@ module Verifier {
       context := ProcessPredicateStmts(preLearning, bodyIncarnations, context, smtEngine);
 
       var postCheck := SpecConversions.ToCheck(proc.Post);
-      Process([body] + postCheck, bodyIncarnations, context, BC.Empty(), smtEngine);
+      var procOutcomes := new ProcedureOutcomes();
+      Process([body] + postCheck, bodyIncarnations, context, BC.Empty(), smtEngine, procOutcomes);
+      ReportUnreachedReachStatements(body, procOutcomes);
     }
   }
 
@@ -141,7 +151,7 @@ module Verifier {
     {
       assert spec[i] in spec;
       match spec[i]
-      case AExpr(cond) =>
+      case AExpr(cond, _) =>
         var rCond := incarnations.REval(cond);
         context := RSolvers.Extend(context, rCond);
       case AAssertion(s) =>
@@ -150,7 +160,9 @@ module Verifier {
           BC.AboutStmtSeqMeasureSingleton(s);
           BC.ContinuationsMeasureEmpty();
         }
-        Process([s], incarnations, context, BC.Empty(), smtEngine);
+        var procOutcomes := new ProcedureOutcomes();
+        Process([s], incarnations, context, BC.Empty(), smtEngine, procOutcomes);
+        expect procOutcomes.reachableReachStatements == {}; // since "s" does not contain any "reach" statements
         var L := SpecConversions.Learn(s);
         var rL := incarnations.REval(L);
         context := RSolvers.Extend(context, rL);
@@ -184,9 +196,9 @@ module Verifier {
     }
   }
 
-  method Process(stmts: seq<Stmt>, incarnations_in: I.Incarnations, context_in: RSolvers.RContext, B: BC.T, smtEngine: RSolvers.REngine)
-    requires AstValid.StmtSeq(stmts) && BC.Valid(B) && smtEngine.Valid()
-    modifies smtEngine.Repr
+  method Process(stmts: seq<Stmt>, incarnations_in: I.Incarnations, context_in: RSolvers.RContext, B: BC.T, smtEngine: RSolvers.REngine, procOutcomes: ProcedureOutcomes)
+    requires AstValid.StmtSeq(stmts) && BC.Valid(B) && smtEngine.Valid() && procOutcomes !in smtEngine.Repr
+    modifies smtEngine.Repr, procOutcomes
     ensures smtEngine.Valid()
     decreases BC.StmtSeqMeasure(stmts) + BC.ContinuationsMeasure(B)
   {
@@ -200,8 +212,8 @@ module Verifier {
     BC.StmtMeasureSplit(stmts);
 
     if stmt.IsPredicateStmt() {
-      context := ProcessPredicateStmt(stmt, incarnations, context, smtEngine);
-      Process(cont, incarnations, context, B, smtEngine);
+      context := ProcessPredicateStmt(stmt, incarnations, context, smtEngine, procOutcomes);
+      Process(cont, incarnations, context, B, smtEngine, procOutcomes);
       return;
     }
 
@@ -219,13 +231,13 @@ module Verifier {
         context := RSolvers.Extend(context, cond);
       }
       BC.StmtMeasurePrepend(body, cont);
-      Process([body] + cont, incarnations, context, B, smtEngine);
+      Process([body] + cont, incarnations, context, B, smtEngine, procOutcomes);
     case Assign(lhs, rhs) =>
       var sRhs := incarnations.REval(rhs);
       var sLhs;
       incarnations, sLhs := incarnations.Update(lhs);
       context := RSolvers.ExtendWithEquality(context, sLhs, sRhs);
-      Process(cont, incarnations, context, B, smtEngine);
+      Process(cont, incarnations, context, B, smtEngine, procOutcomes);
     case Reinit(vars) =>
       for n := 0 to |vars|
         invariant smtEngine.Valid()
@@ -238,22 +250,22 @@ module Verifier {
       {
         context := AssumeAutoInvariant(vars[n], incarnations, context);
       }
-      Process(cont, incarnations, context, B, smtEngine);
+      Process(cont, incarnations, context, B, smtEngine, procOutcomes);
     case Block(stmts) =>
       BC.AboutStmtSeqMeasureConcat(stmts, cont);
-      Process(stmts + cont, incarnations, context, B, smtEngine);
+      Process(stmts + cont, incarnations, context, B, smtEngine, procOutcomes);
     case Call(_, _) =>
       incarnations, context := ProcessCall(stmt, incarnations, context, smtEngine);
-      Process(cont, incarnations, context, B, smtEngine);
+      Process(cont, incarnations, context, B, smtEngine, procOutcomes);
     case AForall(v, body) =>
       var bodyIncarnations, _ := incarnations.Update(v);
       BC.AboutStmtSeqMeasureSingleton(body);
-      Process([body], bodyIncarnations, context, B, smtEngine);
+      Process([body], bodyIncarnations, context, B, smtEngine, procOutcomes);
       assert !StaticConsistency.ContainsNonAssertions(stmt);
       var L := SpecConversions.Learn(stmt);
       var rL := incarnations.REval(L);
       context := RSolvers.Extend(context, rL);
-      Process(cont, incarnations, context, B, smtEngine);
+      Process(cont, incarnations, context, B, smtEngine, procOutcomes);
     case Choose(branches) =>
       for i := 0 to |branches|
         invariant smtEngine.Valid()
@@ -261,16 +273,16 @@ module Verifier {
         var ctx := RSolvers.RecordTracePoint(context, "choose alternative " + Int2String(i));
         BC.StmtSeqElement(branches, i);
         BC.StmtMeasurePrepend(branches[i], cont);
-        Process([branches[i]] + cont, incarnations, ctx, B, smtEngine);
+        Process([branches[i]] + cont, incarnations, ctx, B, smtEngine, procOutcomes);
       }
     case Loop(_, _) =>
       // `cont` is ignored, since a `loop` never has any normal exit
-      ProcessLoop(stmt, incarnations, context, B, smtEngine);
+      ProcessLoop(stmt, incarnations, context, B, smtEngine, procOutcomes);
     case LabeledStmt(lbl, body) =>
       var B' := BC.Add(B, lbl, incarnations.Variables(), cont);
       BC.AboutContinuationsMeasureAdd(B, lbl, incarnations.Variables(), cont);
       BC.StmtPairMeasure(body, Exit(lbl));
-      Process([body, Exit(lbl)], incarnations, context, B', smtEngine);
+      Process([body, Exit(lbl)], incarnations, context, B', smtEngine, procOutcomes);
     case Exit(lbl) =>
       expect lbl in B, lbl.Name; // TODO
       var c := BC.Get(B, lbl);
@@ -282,31 +294,41 @@ module Verifier {
       assert BC.ContinuationsMeasure(B) >= BC.StmtSeqMeasure(cont) + BC.ContinuationsMeasure(B0) by {
         BC.AboutContinuationsMeasure(B0, lbl, variablesInScope, cont);
       }
-      Process(cont, incarnations', context, B0, smtEngine);
+      Process(cont, incarnations', context, B0, smtEngine, procOutcomes);
     case Probe(e) =>
       var rExpr := incarnations.REval(e);
       context := RSolvers.Record(context, rExpr, incarnations.Type2SType(e.ExprType()));
-      Process(cont, incarnations, context, B, smtEngine);
+      Process(cont, incarnations, context, B, smtEngine, procOutcomes);
   }
 
-  method ProcessPredicateStmt(stmt: Stmt, incarnations: I.Incarnations, context_in: RSolvers.RContext, smtEngine: RSolvers.REngine)
+  method ProcessPredicateStmt(stmt: Stmt, incarnations: I.Incarnations, context_in: RSolvers.RContext, smtEngine: RSolvers.REngine, procOutcomes: ProcedureOutcomes)
       returns (context: RSolvers.RContext)
     requires AstValid.Stmt(stmt) && stmt.IsPredicateStmt()
-    requires smtEngine.Valid()
-    modifies smtEngine.Repr
+    requires smtEngine.Valid() && procOutcomes !in smtEngine.Repr
+    modifies smtEngine.Repr, procOutcomes
     ensures smtEngine.Valid()
   {
     context := context_in;
     match stmt
-    case Check(cond) =>
+    case Check(cond, location) =>
       var rCond := incarnations.REval(cond);
-      ProveAndReport(context, rCond, "check", cond, smtEngine);
+      ProveAndReport(context, rCond, location, smtEngine);
     case Assume(cond) =>
       var rCond := incarnations.REval(cond);
       context := RSolvers.Extend(context, rCond);
-    case Assert(cond) =>
+    case Reach(cond, location) =>
+      if location !in procOutcomes.reachableReachStatements {
+        var rCond := incarnations.REval(cond);
+        var negatedCondition := RSolvers.FuncAppl(RSolvers.RExpr.Operator2ROperator(Operator.LogicalNot), [rCond]);
+        var result := smtEngine.Prove(context, negatedCondition);
+        match result
+        case Proved =>
+        case Unproved(_) =>
+          procOutcomes.reachableReachStatements := procOutcomes.reachableReachStatements + {location};
+      }
+    case Assert(cond, location) =>
       var rCond := incarnations.REval(cond);
-      ProveAndReport(context, rCond, "assert", cond, smtEngine);
+      ProveAndReport(context, rCond, location, smtEngine);
       context := RSolvers.Extend(context, rCond);
   }
 
@@ -417,14 +439,16 @@ module Verifier {
     for i := 0 to |stmts|
       invariant smtEngine.Valid()
     {
-      context := ProcessPredicateStmt(stmts[i], incarnations, context, smtEngine);
+      var procOutcomes := new ProcedureOutcomes();
+      context := ProcessPredicateStmt(stmts[i], incarnations, context, smtEngine, procOutcomes);
+      expect procOutcomes.reachableReachStatements == {}; // since "stmts[i]" does not contain any "reach" statements
     }
   }
 
-  method ProcessLoop(stmt: Stmt, incarnations_in: I.Incarnations, context_in: RSolvers.RContext, B: BC.T, smtEngine: RSolvers.REngine)
+  method ProcessLoop(stmt: Stmt, incarnations_in: I.Incarnations, context_in: RSolvers.RContext, B: BC.T, smtEngine: RSolvers.REngine, procOutcomes: ProcedureOutcomes)
     requires AstValid.Stmt(stmt) && stmt.Loop?
-    requires BC.Valid(B) && smtEngine.Valid()
-    modifies smtEngine.Repr
+    requires BC.Valid(B) && smtEngine.Valid() && procOutcomes !in smtEngine.Repr
+    modifies smtEngine.Repr, procOutcomes
     ensures smtEngine.Valid()
     decreases BC.StmtMeasure(stmt) + BC.ContinuationsMeasure(B), 0
   {
@@ -480,13 +504,11 @@ module Verifier {
         BC.StmtSeqMeasure(assumeInvariants + [body] + maintenanceChecks);
       }
     }
-    Process(assumeInvariants + [body] + maintenanceChecks, incarnations, context, B, smtEngine);
+    Process(assumeInvariants + [body] + maintenanceChecks, incarnations, context, B, smtEngine, procOutcomes);
   }
 
-  // `errorReportingInfo` is currently an expression that, together with `errorText`, gets printed
-  // if `context ==> expr` cannot be proved by `smtEngine`.
-  // TODO: This should be improved to instead use source locations.
-  method ProveAndReport(context: RSolvers.RContext, expr: RSolvers.RExpr, errorText: string, errorReportingInfo: Expr, smtEngine: RSolvers.REngine)
+  // print error if `context ==> expr` cannot be proved by `smtEngine`.
+  method ProveAndReport(context: RSolvers.RContext, expr: RSolvers.RExpr, location: Location, smtEngine: RSolvers.REngine)
     requires smtEngine.Valid()
     modifies smtEngine.Repr
     ensures smtEngine.Valid()
@@ -495,10 +517,41 @@ module Verifier {
     match result
     case Proved =>
     case Unproved(reason) =>
-      print "Error: Failed to prove ", errorText, " ", errorReportingInfo.ToString(), "\n";
+      print "Error: Failed to prove ", location.description, "\n";
       RSolvers.PrintTrace(context);
       if "solver-failure" in smtEngine.Options {
         print "Low-level proof-failure context: ", reason, "\n";
       }
   }
+
+  method ReportUnreachedReachStatements(stmt: Stmt, procOutcomes: ProcedureOutcomes) {
+    match stmt
+    case VarDecl(_, _, body) =>
+      ReportUnreachedReachStatements(body, procOutcomes);
+    case Assign(_, _) =>
+    case Reinit(_) =>
+    case Block(stmts) =>
+      for i := 0 to |stmts| {
+        ReportUnreachedReachStatements(stmts[i], procOutcomes);
+      }
+    case Call(_, _) =>
+    case Check(_, _) =>
+    case Assume(_) =>
+    case Reach(_, location) =>
+      if location !in procOutcomes.reachableReachStatements {
+        print "Error: Failed to ", location.description, "\n";
+      }
+    case Assert(_, _) =>
+    case AForall(_, _) =>
+    case Choose(branches) =>
+      for i := 0 to |branches| {
+        ReportUnreachedReachStatements(branches[i], procOutcomes);
+      }
+    case Loop(_, body) =>
+      ReportUnreachedReachStatements(body, procOutcomes);
+    case LabeledStmt(_, body) =>
+      ReportUnreachedReachStatements(body, procOutcomes);
+    case Exit(_) =>
+    case Probe(_) =>
+ }
 }

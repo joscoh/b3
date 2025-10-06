@@ -76,9 +76,10 @@ module AssignmentTargets {
       BlockTargets(stmts)
     case Call(_, args) =>
       StmtInformation.EmptyNormal.AddOutgoingArguments(args)
-    case Check(_) => StmtInformation.EmptyNormal
+    case Check(_, _) => StmtInformation.EmptyNormal
     case Assume(_) => StmtInformation.EmptyNormal
-    case Assert(_) => StmtInformation.EmptyNormal
+    case Reach(_, _) => StmtInformation.EmptyNormal
+    case Assert(_, _) => StmtInformation.EmptyNormal
     case AForall(_, _) => StmtInformation.EmptyNormal
     case Choose(branches) =>
       ChooseTargets(branches)

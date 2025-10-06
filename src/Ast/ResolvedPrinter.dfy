@@ -162,13 +162,16 @@ module ResolvedPrinter {
       }
       print ")\n";
 
-    case Check(e) =>
+    case Check(e, _) =>
       ExpressionStmt("check", e);
 
     case Assume(e) =>
       ExpressionStmt("assume", e);
 
-    case Assert(e) =>
+    case Reach(e, _) =>
+      ExpressionStmt("reach", e);
+
+    case Assert(e, _) =>
       ExpressionStmt("assert", e);
 
     case AForall(v, body) =>
@@ -278,7 +281,7 @@ module ResolvedPrinter {
     case _ => ""
   }
 
-  method PrintAExprs(indent: nat, prefix: string, aexprs: seq<AExpr>, ghost parent: Stmt := Loop(aexprs, Assert(BLiteral(true))))
+  method PrintAExprs(indent: nat, prefix: string, aexprs: seq<AExpr>, ghost parent: Stmt := Loop(aexprs, Block([])))
     requires forall ae <- aexprs :: ae.AAssertion? ==> ae.s < parent
     decreases parent, 0
   {
@@ -286,7 +289,7 @@ module ResolvedPrinter {
       Indent(indent);
       print prefix, " ";
       match aexprs[i]
-      case AExpr(e) =>
+      case AExpr(e, _) =>
         Expression(e);
         print "\n";
       case AAssertion(s) =>
