@@ -39,12 +39,12 @@ function H..str(subject: string): string
 
 function NicelyIndented(x: int, y: int, b: bool, c: MyClass): int
 {
-  if x == 12 then
+  if x == 12
     20
-  else if x == 13 then
+  else if x == 13
     val u: int := 2 * y
     val v: int := 3 * u + x
-    if u + v <= v + u then
+    if u + v <= v + u
       300
     else
       -1 + G()
@@ -57,7 +57,7 @@ function AnotherNicelyIndented(x: int, y: int): bool
   x < y && x <= y && x != y && y < x && y <= x && x <= y &&
   val u: int := 19
   val v: int := 21
-  if u + v <= v + u then
+  if u + v <= v + u
     300 < 400
   else
     -1 + G() != 75
@@ -167,12 +167,12 @@ axiom explains H
 axiom explains NicelyIndented
   forall x: int, y: int, b: bool, c: MyClass
     pattern NicelyIndented(x, y, b, c)
-    NicelyIndented(x, y, b, c) == if x == 12 then 20 else if x == 13 then val u: int := 2 * y val v: int := 3 * u + x if u + v <= v + u then 300 else -1 + G() else 4000
+    NicelyIndented(x, y, b, c) == if x == 12 20 else if x == 13 val u: int := 2 * y val v: int := 3 * u + x if u + v <= v + u 300 else -1 + G() else 4000
 
 axiom explains AnotherNicelyIndented
   forall x: int, y: int
     pattern AnotherNicelyIndented(x, y)
-    AnotherNicelyIndented(x, y) == (x < y && x <= y && x != y && y < x && y <= x && x <= y && val u: int := 19 val v: int := 21 if u + v <= v + u then 300 < 400 else -1 + G() != 75)
+    AnotherNicelyIndented(x, y) == (x < y && x <= y && x != y && y < x && y <= x && x <= y && val u: int := 19 val v: int := 21 if u + v <= v + u 300 < 400 else -1 + G() != 75)
 
 axiom explains Red..tag
   Red..tag() == |%tag: tag|
@@ -414,7 +414,7 @@ procedure OptionalType(w: int, x: int, out r: int)
 {
   return: {
     var y: int := x
-    var z: int := 5 + val u: int := if w < x then 2 else y u + u
+    var z: int := 5 + val u: int := if w < x 2 else y u + u
     r := y + z
   }
 }

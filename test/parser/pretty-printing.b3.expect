@@ -11,11 +11,11 @@ procedure P(b: bool)
   assert (b || b || b) && (b || b)
   assert (a < a) == (a <= a)
   assert b == (a == a) && (a != a) != b
-  var x := 3 + (if b then 10 else 20) + 4
-  var y := 3 + (val z := if b then 10 else 20 z + z) + 4
+  var x := 3 + (if b 10 else 20) + 4
+  var y := 3 + (val z := if b 10 else 20 z + z) + 4
   assert b && (forall x: int Q(x)) && b
-  x := 3 * (if b then 10 else 1 + 20) + 4
-  x := 3 + (if b then 10 else 1 + 20) * 4
+  x := 3 * (if b 10 else 1 + 20) + 4
+  x := 3 + (if b 10 else 1 + 20) * 4
   var k := a + -a - ----a + -(a + a) + 2
   var l := b && !b && !!!!b && !(b || b) && b
 }

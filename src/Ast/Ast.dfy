@@ -459,7 +459,7 @@ module Ast {
         PrintUtil.ParenthesisWrap(opStrength, context,
           if op == Operator.IfThenElse && op.ArgumentCount() == |args| then
             "if " + args[0].ToString() +
-            " then " + args[1].ToString() +
+            " " + args[1].ToString() +
             " else " + args[2].ToString(opStrength.SubexpressionPower(PrintUtil.Right, context))
           else if op.ArgumentCount() == 1 == |args| then
             op.ToString() + args[0].ToString(opStrength.SubexpressionPower(PrintUtil.Right, context))

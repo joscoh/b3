@@ -48,7 +48,7 @@ The given identifier denotes a variable in scope, specifically
 
 ```
 OperatorExpr ::=
-  | if Expression then Expression else Expression
+  | if Expression Expression else Expression
   | Expression BinaryOp Expression
   | UnaryOp Expression
 BinaryOp ::=

@@ -397,7 +397,7 @@ module Parser {
    * UnaryExpr ::= ( "!" | "-" )* PrimaryExpr
    * PrimaryExpr ::= EndlessExpr
    *               | AtomicExpr
-   * EndlessExpr ::= "if" Expr "then" Expr "else" Expr
+   * EndlessExpr ::= "if" Expr Expr "else" Expr
    *               | "var" Id ":" Type ":=" Expr ";" Expr
    *               | ( "forall" | "exists" ) Id ":" Type ( "pattern" Expr*, )* Expr
    *               | Id ":" Expr
@@ -495,7 +495,7 @@ module Parser {
   function parsePrimaryExpr(c: ExprRecSel): B<Expr> {
     Or([
       T("if").e_I(c("expr")).Then(guard =>
-        T("then").e_I(c("expr")).I_I(T("else").e_I(c("expr"))).M2(MId, (thn, els) => OperatorExpr(IfThenElse, [guard, thn, els]))
+        c("expr").I_I(T("else").e_I(c("expr"))).M2(MId, (thn, els) => OperatorExpr(IfThenElse, [guard, thn, els]))
       ),
       T("val").e_I(parseIdOptionalType.Then(p => var (name: string, optionalType: Option<Types.TypeName>) := p;
         Sym(":=").e_I(c("expr")).I_I(c("expr")).M2(MId, (rhs, body) => LetExpr(name, optionalType, rhs, body)))

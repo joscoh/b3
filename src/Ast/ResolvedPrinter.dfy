@@ -318,7 +318,6 @@ module ResolvedPrinter {
         var ind := format.More();
         print "if ";
         Expression(args[0]);
-        print " then";
         ind.Space();
         Expression(args[1], format := ind);
         format.Space();

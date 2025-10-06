@@ -12,6 +12,7 @@ Stmt ::=
   // assertions
   | Check
   | Assume
+  | Reach
   | Assert
   | AForall
   // control flow

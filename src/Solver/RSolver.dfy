@@ -142,7 +142,7 @@ module RSolvers {
       case FuncAppl(op, args) =>
         op.ToString() + "(" + RExprListToString(args, this) + ")"
       case IfThenElse(guard, thn, els) =>
-        "(if " + guard.ToString() + " then " + thn.ToString() + " else " + els.ToString() + ")"
+        "(if " + guard.ToString() + " " + thn.ToString() + " else " + els.ToString() + ")"
       case LetExpr(v, rhs, body) =>
         "(val " + v.name + ": " + v.typ.ToString() + " := " + rhs.ToString() + " " + body.ToString() + ")"
       case QuantifierExpr(univ, vv, patterns, body) =>
