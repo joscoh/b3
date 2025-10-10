@@ -112,7 +112,7 @@ module RSolvers {
       requires op != Ast.Operator.IfThenElse && op != Ast.Operator.Neq
     {
       match op
-      case Equiv => "-"
+      case Equiv => "="
       case LogicalImp => "=>"
       case LogicalAnd => "and"
       case LogicalOr => "or"

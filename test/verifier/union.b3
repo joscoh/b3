@@ -1,0 +1,46 @@
+// RUN: %verify "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+type string
+
+type Value
+tagger ValueTagger for Value
+
+function MkInt(injective val: int): Value tag ValueTagger
+function MkStr(injective val: string): Value tag ValueTagger
+
+procedure TestGeneratedFunctions(i: int) {
+  check ValueTagger(MkInt(i)) == MkInt..tag()
+  check MkInt..val(MkInt(i)) == i
+}
+
+function Equal(v1: Value, v2: Value): bool
+axiom
+  forall i1: int, i2: int
+    pattern Equal(MkInt(i1), MkInt(i2))
+    Equal(MkInt(i1), MkInt(i2)) <==> i1 == i2
+axiom
+  forall v1: Value, v2: Value
+    pattern Equal(v1, v2)
+    ValueTagger(v1) != ValueTagger(v2) ==> !Equal(v1, v2)
+
+procedure Test(x: Value)
+  requires Equal(x, MkInt(2))
+{
+}
+
+procedure TestNegation(x: Value)
+  requires !Equal(x, MkInt(2))
+{
+}
+
+procedure Main()
+{
+  Test(MkInt(2))
+  Test(MkInt(3)) // error
+  Test(MkStr(|e: string|)) // error
+
+  TestNegation(MkInt(2)) // error
+  TestNegation(MkInt(3))
+  TestNegation(MkStr(|e: string|))
+}
