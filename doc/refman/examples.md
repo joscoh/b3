@@ -20,9 +20,6 @@ procedure TestLists(list: List) {
 }
 ```
 
-A to-do item for this documentation is to also make inline code, like `check x < y`,
-be processed by pygments syntax highlighting.
-
 Here is a longer example:
 
 ```{literalinclude} ../../test/refman/FileSystem.b3
@@ -33,6 +30,13 @@ Here is a longer example:
 Here are examples that show union types and discriminated union types:
 
 ```{literalinclude} ../../test/refman/Unions.b3
+:start-after: // BEGIN EXAMPLE
+:end-before: // END EXAMPLE
+```
+
+Here is an example that defines maps from integers to values:
+
+```{literalinclude} ../../test/refman/Maps.b3
 :start-after: // BEGIN EXAMPLE
 :end-before: // END EXAMPLE
 ```
