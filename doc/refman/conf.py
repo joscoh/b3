@@ -44,6 +44,6 @@ highlight_language = 'b3'
 html_theme = 'renku'
 html_static_path = ['_static']
 html_js_files = ['inline-highlight.js']
-html_css_files = ['color.css']
+html_css_files = ['custom-b3.css']
 html_show_sourcelink = False
 show_authors = True

@@ -11,6 +11,10 @@ Program ::=
   | Procedure
 ```
 
+A program has three separate namespaces for top-level declarations: one is for types, another is
+for taggers and functions, and the third is for procedures. In other words, the language allows,
+for example, a procedure to have the same as a function.
+
 ## Types
 
 ```
@@ -66,13 +70,13 @@ FParameter ::=
 
 A declaration `function F(x: X): Y` declares a function from `X` to `Y`.
 
-* The names of the function's parameters must be distinct.
-* The name of the function itself must not be the same as any other function or tagger.
+* The name of the function must not be the same as any other function or tagger.
+* The must not be any duplicate names among the function's parameters.
 * The identifier in the optional `tag` clause must denote a tagger.
 * Any `when` expression must have type `bool`, and
   the type of the optional body expression (between curly braces) must be
   function's result type.
-* The free variables of the `when` expressions and body can be any subset of the
+* The free variables of the `when` expressions and body must be some subset of the
   function's parameters.
 
 ### Function definition
@@ -155,12 +159,12 @@ axiom explains MapCoordinate
     MapCoordinate..y(MapCoordinate(x, y, label)) == y
 ```
 
-```{note}
+`````{note}
 User-defined identifiers are not allowed to contain the substring `..`, so the names of these automatically
 generated inverse functions are unique.
-```
+`````
 
-````{note}
+`````{note}
 A semantically equivalent way of axiomatizing injectivity for `MapCoordinate` is
 
 ```{literalinclude} ../../test/refman/top-level-decls.b3
@@ -171,7 +175,7 @@ A semantically equivalent way of axiomatizing injectivity for `MapCoordinate` is
 However, this axiomatization gives rise to poor SMT performance because the number of matches for its pattern
 is quadratic is the number of `MapCoordinate` terms in the proof context. It's better to mark parameters
 with `injective`, whether or not the inverse functions are used elsewhere in the B3 program.
-````
+`````
 
 (sec-function-tags)=
 ### Functions with disjoint images
@@ -216,7 +220,8 @@ returns `F..tag()` when applied to the result values of `F`. Applied to the `Dri
 :end-before: // END TagAxiom
 ```
 
-````{note}
+`````{admonition} Example
+:class: tip
 The combination of `injective` and `tag` are useful in declaring what essentially are the constructors of
 algebraic datatypes. For example, to represent a type like
 
@@ -229,10 +234,11 @@ from another programming language, one can in B3 declare
 :end-before: // END Datatype
 ```
 
-````
+`````
 
 ### Inconsistent function definitions
 
+`````{caution}
 It is possible to declare a function body that gives rise to a logical inconsistency.
 For example, the declaration
 
@@ -267,6 +273,8 @@ without first having to detect the inconsistencies; if the source language is co
 inconsistencies, then it would encode additional proof obligations in B3 that detect the source-language
 inconsistencies. The `explains` clauses of `axiom`s in B3 allow these two encodings to be done simultaneously.
 
+`````
+
 ## Axioms
 
 ```
@@ -275,8 +283,13 @@ Axiom ::=
     Expression
 ```
 
-The `explains` clause names a set of functions.
-The axiom is added to the antecedent of a proof obligation if all of the functions have been included in the proof obligation.
+A declaration `axiom e` introduces a property that can be used at any time while reasoning about the program.
+
+* The expression must have type `bool`.
+* Each identifier in the `explains` clause must denote a function or tagger.
+
+The axiom gets used (is _active_) in those proof obligations where all of the functions in the `explains`
+clause appear. A functions mentioned in the expression of an active axiom may in turn activate further axioms.
 
 ## Procedures
 
@@ -298,10 +311,24 @@ AExpression ::=
   | BlockStmt
 ```
 
-There are restrictions on the `BlockStmt` version of `AExpression` as to which statements the block
-is allowed to contain.
+A declaration `procedure M(x: X)` introduces a procedure, which is a named signature with a pre- and postcondition
+specification and an optional implementation body.
 
-There are three parameter modes: in, inout, and out. The absence of `inout` and `out` indicates an
-in-argument.
+* The name of the procedure must not be the same as any other procedure.
+* The must not be any duplicate names among the procedure's parameters.
+* Each procedure parameter can be pass in (default), out (indicated by `out`), or both (`inout`).
+* Any `autoinv` expression (_auto-invariant_) must have type `bool`.
+* Any expression following `requires` (_precondition_) or `ensures` (_postcondition_)
+  must have type `bool`.
+* The free variables of the `autoinv` expression of an in- or inout-parameter or of
+  a `requires` clause must be some subset of the procedure's in- and inout-parameters.
+* The free variables of the `autoinv` expression of an out-parameter or of
+  an `ensures` clause must be some subset of the procedure's parameters.
+  In addition, these expressions and clauses are allowed to mention the `old` form
+  of inout-parameters.
+* The optional body of a procedure can mention any of the procedure's parameters.
+  In addition, the body is allowed to mention the `old` form of inout-parameters.
+  In the body, inout- and out-parameters are mutable variables, where in-parameters
+  and the `old` form of inout-parameters are immutable variables.
 
-In the procedure body, in-parameters are immutable and inout- and out-parameters are mutable.
+The `BlockStmt` form of an `AExpression` is a restricted form of statements, described later.
