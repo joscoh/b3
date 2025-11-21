@@ -233,13 +233,6 @@ If an explicit `else` branch is omitted, it defaults to `else { }`.
 The three variations of `IfContinuation` gives a streamlined syntax for writing cascading `if` statements, but
 are semantically equivalent to putting the `If` or `IfCase` inside a block statement.
 
-
-
-
-
-TODO: give an example of how to encode a `match` statement using `val` and an `if` (where each `else` uses quantifier
-to say there's no value for the previous bound variables).
-
 ## If-case statements
 
 ```
@@ -268,6 +261,91 @@ The `case`s are unordered. If the expression for more than one `case` evaluates 
 arbitrarily chooses one of them.
 
 If no `case` evaluates to `true`, then the entire statement is like `assume false`.
+
+`````{admonition} Example
+:class: tip
+Here is an example that shows the `if`, `if case`, and `choose` statements in action.
+
+Suppose a source language declares a type
+
+```{code-block} text
+:class: italic-code
+datatype Fruit = Apricot(w: int) | Banana(w: int, y: int) | Clementine(z: int)
+```
+
+These may be encoded into B3 as
+
+```{literalinclude} ../../test/refman/statements.b3
+:start-after: // BEGIN Fruit
+:end-before: // END Fruit
+```
+
+Consider a source-language variable `fruit: Fruit` and a source-language statement
+
+```{code-block} text
+:class: italic-code
+match fruit
+case Apricot(w) =>
+  // A...
+case Banana(w, y) =>
+  // B...
+case Clementine(z) =>
+  // C...
+```
+
+An encoding of such a `match` statement may have the following structure:
+
+```{literalinclude} ../../test/refman/statements.b3
+:start-after: // BEGIN MatchStructure
+:end-before: // END MatchStructure
+```
+
+where each branch has a form like
+
+```{literalinclude} ../../test/refman/statements.b3
+:start-after: // BEGIN EachBranch
+:end-before: // END EachBranch
+```
+
+In such an encoding, the `A...` branch essentially has two variables for each source-language
+bound variable: a Skolemized version of `exists w` and the local variable `w`.
+This may in turn give rise to twice the number of quantifier instantiations, one for each of
+these variables.
+
+A more complicated encoding that removes that redundancy is
+
+```{literalinclude} ../../test/refman/statements.b3
+:start-after: // BEGIN GeneralMatch
+:end-before: // END GeneralMatch
+```
+
+If one can syntactically determine in the source language that all possibilities are covered, then the final
+branch that ends with `assert false` is not needed.
+Moreover, if the order of evaluation among the cases does not matter (for example, if the cases are known
+to be mutually exclusive), then the quantified assumptions in the `or` branches are not needed.
+The encoding into B3 can then be simplified to
+
+```{literalinclude} ../../test/refman/statements.b3
+:start-after: // BEGIN SimplifiedMatch
+:end-before: // END SimplifiedMatch
+```
+
+The various `if` and `choose` statements in B3 do not themselves include variable declarations.[^fn-if-var]
+Therefore, the bound variables `w`, `x`, `y`, and `z` from the source-language cases need to be declared
+either inside each branch or before all the branches.
+It's nicer to declare them inside each branch, because then the resulting B3 scopes will correspond to
+those in the source language.
+However, if declaring all of them ahead of the branches is a possibility, then the encoding into B3 can be
+written as
+
+[^fn-if-var]: unlike `if` statements in Go and binding guards in Dafny
+
+```{literalinclude} ../../test/refman/statements.b3
+:start-after: // BEGIN DeclareBoundVariablesTogetherMatch
+:end-before: // END DeclareBoundVariablesTogetherMatch
+```
+
+`````
 
 (sec-loops)=
 ## Loops

@@ -63,3 +63,110 @@ TryBlock: {
 }
 // END LexicExceptionHandling
 }
+
+// --------------------------------------------------------------------------------
+
+// BEGIN Fruit
+type Fruit
+tagger FruitTag for Fruit
+
+function Apricot(injective w: int): Fruit tag FruitTag
+function Banana(injective x: int, injective y: int): Fruit tag FruitTag
+function Clementine(injective z: int): Fruit tag FruitTag
+// END Fruit
+
+procedure MatchStructure(fruit: Fruit)
+  requires (exists w: int pattern Apricot(w) fruit == Apricot(w))
+        || (exists x: int, y: int pattern Banana(x, y) fruit == Banana(x, y))
+        || (exists z: int pattern Clementine(z) fruit == Clementine(z))
+{
+// BEGIN MatchStructure
+if exists w: int pattern Apricot(w) fruit == Apricot(w) {
+  // ...
+} else if exists x: int, y: int pattern Banana(x, y) fruit == Banana(x, y) {
+  // ...
+} else if exists z: int pattern Clementine(z) fruit == Clementine(z) {
+  // ...
+} else {
+  assert false
+}
+// END MatchStructure
+}
+
+procedure EachBranch(fruit: Fruit) {
+// BEGIN EachBranch
+  val w: int
+  assume fruit == Apricot(w)
+  // A...
+// END EachBranch
+}
+
+procedure GeneralMatch(fruit: Fruit)
+  requires (exists w: int pattern Apricot(w) fruit == Apricot(w))
+        || (exists x: int, y: int pattern Banana(x, y) fruit == Banana(x, y))
+        || (exists z: int pattern Clementine(z) fruit == Clementine(z))
+{
+// BEGIN GeneralMatch
+choose {
+  val w: int
+  assume fruit == Apricot(w)
+  // A...
+} or {
+  assume forall w: int pattern Apricot(w) fruit != Apricot(w)
+  choose {
+    val x: int
+    val y: int
+    assume fruit == Banana(x, y)
+    // B...
+  } or {
+    assume forall x: int, y: int pattern Banana(x, y) fruit != Banana(x, y)
+    choose {
+      val z: int
+      assume fruit == Clementine(z)
+      // C...
+    } or {
+      assume forall z: int pattern Clementine(z) fruit != Clementine(z)
+      assert false
+    }
+  }
+}
+// END GeneralMatch
+}
+
+procedure SimplifiedMatch(fruit: Fruit) {
+// BEGIN SimplifiedMatch
+choose {
+  val w: int
+  assume fruit == Apricot(w)
+  // A...
+} or {
+  val x: int
+  val y: int
+  assume fruit == Banana(x, y)
+  // B...
+} or {
+  val z: int
+  assume fruit == Clementine(z)
+  // C...
+}
+// END SimplifiedMatch
+}
+
+procedure DeclareBoundVariablesTogetherMatch(fruit: Fruit) {
+// BEGIN DeclareBoundVariablesTogetherMatch
+val w: int
+val x: int
+val y: int
+val z: int
+if
+case fruit == Apricot(w) {
+  // A...
+}
+case fruit == Banana(x, y) {
+  // B...
+}
+case fruit == Clementine(z) {
+  // C...
+}
+// END DeclareBoundVariablesTogetherMatch
+}
