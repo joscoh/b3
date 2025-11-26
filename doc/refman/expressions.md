@@ -178,7 +178,10 @@ FunctionCall ::=
   Identifier "(" Expression*, ")"
 ```
 
-TODO: description
+A function call `F(e)` obtains the value of function `F` on the argument `e`.
+
+The identifier must denote a function or tagger in the program.
+The types of the actual arguments must be the same as for the corresponding formal parameters for the function.
 
 ## Labeled expressions
 
@@ -187,9 +190,11 @@ LabeledExpr ::=
   Identifier ":" Expression
 ```
 
-The `Expression` parses as far as possible.
+The expression `lbl: e` associates the label name `lbl` with expression `e`. The label can be used by
+tools in reporting analysis results.
 
-TODO: description
+Syntactically, the `Expression` parses as far as possible. For example, `lbl: a + b` means `lbl: (a + b)`.
+To instead parse it as `(lbl: a) + b`, use explicit parentheses.
 
 ## Let expressions
 
@@ -198,19 +203,38 @@ LetExpr ::=
   val Identifier ":=" Expression Expression
 ```
 
-Note that there is no punctuation between the two expressions.
+The expression `val x := rhs e`, which can be pronounced "let `x` be `rhs` in `e`, binds the new immutable variable `x`
+to the value of `rhs` and then evaluates `e`. The expression `e` is the _body_ of the let expression. The scope of `x`
+is that body.
 
-TODO: description
+Three notes about the syntax are relevant.
+The bound variable is introduced without an explicit type; its type is computed from the right-hand side expression.
+There is no punctuation between the right-hand side expression and the body expression.
+The body expression parses as far as possible; for example, `val x := rhs a + b` means `val x := rhs (a + b)`.
 
 ## Quantifier expressions
 
 ```
 QuantifierExpr ::=
-  ( forall | exists ) Identifier ":" Type
+  ( forall | exists ) ( Identifier ":" Type )+,
   Pattern*
   Expression
 Pattern ::=
   pattern Expression+,
 ```
 
-TODO: description
+The expression `forall x: X pattern p e` denotes the universal quantifier $\forall\, x \colon X \cdot\; e$
+and `exists x: X pattern p e` denotes the existential quantifier $\exists\, x \colon X \cdot\; e$.
+Expression `e` is the _body_ of the quantifier.
+
+The bound variables introduced by the quantifier must be distinct, but they are allowed to shadow other
+variables already in scope.
+
+A _matching pattern_ for a quantifier is a directive that says how the quantifier is used in proofs.
+A pattern consists of a list of expressions. The bound variables introduced by the quantifier are in scope
+in these expressions; in fact, the list of expressions must mention each of the bound variables at least once.
+The pattern expression is not allowed to include quantifiers.
+
+Two notes about the syntax are relevant.
+There is no punctuation before the body expression.
+The body expression parses as far as possible.

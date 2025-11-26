@@ -97,13 +97,17 @@ module ExprResolver {
         r := LetExpr(letVariable, rRhs, rBody);
       case QuantifierExpr(univ, bindings, patterns, body) =>
         var boundVars, varMap' := [], varMap;
+        var namesIntroduced := {};
         for n := 0 to |bindings|
           invariant varMap'.Keys == varMap.Keys + set binding <- bindings[..n] :: binding.name
         {
           var binding := bindings[n];
           if !Raw.LegalVariableName(binding.name) {
             return Failure("illegal variable name: " + binding.name);
+          } else if binding.name in namesIntroduced {
+            return Failure("duplicate variable name in quantifier: " + binding.name);
           }
+          namesIntroduced := namesIntroduced + {binding.name};
           var typ :- ResolveType(binding.typ, ers.typeMap);
           var quantifiedVariable := new LocalVariable(binding.name, false, typ);
           boundVars := boundVars + [quantifiedVariable];
@@ -112,6 +116,7 @@ module ExprResolver {
         assert varMap'.Keys == varMap.Keys + set binding <- bindings :: binding.name;
         var b :- ResolveExpr(body, ers, varMap');
         var trs :- ResolvePatterns(patterns, ers, varMap');
+        var _ :- CheckPatterns(trs, boundVars);
         r := QuantifierExpr(univ, boundVars, trs, b);
     }
     return Success(r);
@@ -147,5 +152,39 @@ module ExprResolver {
       resolvedPatterns := resolvedPatterns + [Pattern(exprs)];
     }
     return Success(resolvedPatterns);
+  }
+
+  method CheckPatterns(patterns: seq<Pattern>, boundVariables: seq<Variable>) returns (result: Result<(), string>) {
+    for i := 0 to |patterns| {
+      var pattern := patterns[i];
+      if exists e <- pattern.exprs :: ContainsQuantifiers(e) {
+        return Failure("a pattern is not allowed to contain quantifiers");
+      }
+      var variablesUsedInPattern := Expr.FreeVariablesInList(pattern.exprs);
+      for i := 0 to |boundVariables| {
+        var bv := boundVariables[i];
+        if bv !in variablesUsedInPattern {
+          return Failure("a pattern must mention all bound variables of the quantifier but doesn't mention '" + bv.name + "'");
+        }
+      }
+    }
+    return Success(());
+  }
+
+  predicate ContainsQuantifiers(expr: Expr) {
+    match expr
+    case BLiteral(_) => false
+    case ILiteral(_) => false
+    case CustomLiteral(_, _) => false
+    case IdExpr(_) => false
+    case OperatorExpr(_, args) =>
+      exists e <- args :: ContainsQuantifiers(e)
+    case FunctionCallExpr(_, args) =>
+      exists e <- args :: ContainsQuantifiers(e)
+    case LabeledExpr(_, body) =>
+      ContainsQuantifiers(body)
+    case LetExpr(v, rhs, body) =>
+      ContainsQuantifiers(rhs) || ContainsQuantifiers(body)
+    case QuantifierExpr(_, _, _, _) => true
   }
 }

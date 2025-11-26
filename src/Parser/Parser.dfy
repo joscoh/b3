@@ -421,7 +421,7 @@ module Parser {
    *               | AtomicExpr
    * EndlessExpr ::= "if" Expr Expr "else" Expr
    *               | "var" Id ":" Type ":=" Expr ";" Expr
-   *               | ( "forall" | "exists" ) Id ":" Type ( "pattern" Expr*, )* Expr
+   *               | ( "forall" | "exists" ) (Id ":" Type)+, ( "pattern" Expr*, )* Expr
    *               | Id ":" Expr
    * AtomicExpr ::= "false" | "true"
    *              | nat

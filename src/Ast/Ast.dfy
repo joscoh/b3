@@ -31,6 +31,7 @@ module Ast {
     reveals Stmt.IsPredicateStmt
     reveals Expr.ExprType, Expr.HasType
     provides Expr.ToString
+    provides Expr.FreeVariables, Expr.FreeVariablesInList
     provides Expr.CreateTrue, Expr.CreateFalse, Expr.CreateNegation, Expr.CreateLet, Expr.CreateForall
     provides Expr.CreateAnd, Expr.CreateBigAnd, Expr.CreateOr, Expr.CreateBigOr
     reveals Pattern, Pattern.WellFormed
@@ -502,6 +503,29 @@ module Ast {
         exprs[0].ToString()
       else
         exprs[0].ToString() + ", " + ListToString(exprs[1..])
+    }
+
+    // Returns the free variables, except for variables occurring only in patterns
+    function FreeVariables(): set<Variable> {
+      match this
+      case BLiteral(_) => {}
+      case ILiteral(_) => {}
+      case CustomLiteral(_, _) => {}
+      case IdExpr(v) => {v}
+      case OperatorExpr(_, args) => FreeVariablesInList(args)
+      case FunctionCallExpr(_, args) => FreeVariablesInList(args)
+      case LabeledExpr(_, body) => body.FreeVariables()
+      case LetExpr(_, rhs, body) => rhs.FreeVariables() + body.FreeVariables()
+      case QuantifierExpr(_, vv, _, body) =>
+        // don't look in patterns
+        body.FreeVariables() - set v <- vv :: v
+    }
+
+    static function FreeVariablesInList(exprs: seq<Expr>): set<Variable> {
+      if exprs == [] then
+        {}
+      else
+        exprs[0].FreeVariables() + FreeVariablesInList(exprs[1..])
     }
 
     static function CreateTrue(): (r: Expr)

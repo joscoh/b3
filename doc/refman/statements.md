@@ -114,7 +114,7 @@ CallArgument ::=
   | ( "inout" | "out" ) Identifier
 ```
 
-A call statement `call P(e, inout y, out z)` invokes procedure `P`, passing it the value of `e` as an in-parameter,
+A call statement `P(e, inout y, out z)` invokes procedure `P`, passing it the value of `e` as an in-parameter,
 variable `y` as an inout-parameter, and variable `z` as an out-parameter.
 
 For readability, the parameter mode (in, inout, or out) of each argument is explicitly repeated at the call site[^fn-mode-at-call-site]
@@ -122,7 +122,8 @@ For readability, the parameter mode (in, inout, or out) of each argument is expl
 
 [^fn-mode-at-call-site]: following C#
 
-The types of the actual arguments must be the same as for the corresponding formal parameters.
+The identifier must denote a procedure in the program.
+The types of the actual arguments must be the same as for the corresponding formal parameters for the procedure.
 
 The variables given as inout- and out-arguments must be distinct mutable variables.
 
