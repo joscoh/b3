@@ -1699,7 +1699,7 @@ axiom forall x: int, fuel: Fuel trigger FCanCall(x, Succ(fuel)) ::
 
 # Closures {#sec-closures}
 
-The translation of some source expressions into B3 follows a receipe like
+The translation of some source expressions into B3 follows a recipe like
 
 > translate this source expression into a B3 expression that we'll call `s` and lay down some
   axioms about the properties of `s`
