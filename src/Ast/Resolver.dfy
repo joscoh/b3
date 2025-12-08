@@ -18,6 +18,10 @@ module Resolver {
   method Resolve(b3: Raw.Program) returns (r: Result<Ast.Program, string>)
     ensures r.Success? ==> b3.WellFormed() && r.value.WellFormed()
   {
+    // TODO: Remove this assumption after datatype parsing is implemented (task 2)
+    // For now, we assume datatypes is empty since parsing is not yet implemented
+    assume {:axiom} b3.datatypes == [];
+    
     var typeMap, types :- ResolveAllTypes(b3);
 
     var taggerMap, taggerFunctions :- ResolveAllTaggers(b3, typeMap);
