@@ -1,7 +1,5 @@
 // RUN: %b3 parse --print "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
-
-// Zero-argument constructor
 datatype Unit = Unit()
 
 // Single-argument constructor
@@ -13,15 +11,12 @@ datatype Pair = Pair(fst: int, snd: bool)
 // Multiple constructors
 datatype Option = None() | Some(value: int)
 
-// Recursive datatype
+// Recursive datatypes
 datatype List = Nil() | Cons(head: int, tail: List)
-
-// Complex datatype with multiple constructors and fields
 datatype Tree = Leaf(value: int) | Node(left: Tree, right: Tree, data: int)
 
 // Nested datatype
-datatype TreeList = TNil() | TCons(head: Tree, tail: TreeList)
-datatype RoseTree = Leaf(value: int) | Node(children: TreeList)
+datatype Foo = A(value: int, l: List) | B(t: Tree)
 
 // Add a type declaration to verify parsing continues correctly
 type MyType

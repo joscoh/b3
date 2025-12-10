@@ -18,7 +18,6 @@ module Resolver {
   method Resolve(b3: Raw.Program) returns (r: Result<Ast.Program, string>)
     ensures r.Success? ==> b3.WellFormed() && r.value.WellFormed()
   {
-    
     var typeMap, types :- ResolveAllTypes(b3);
 
     var _ :- ResolveAllDatatypes(b3, typeMap);
@@ -91,6 +90,7 @@ module Resolver {
     return Success(typeMap), types;
   }
 
+  // TODO: implement datatype resolution
   method ResolveAllDatatypes(b3: Raw.Program, typeMap: map<string, TypeDecl>) returns (r: Result<(), string>)
     requires forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in typeMap
     ensures r.Success? ==>
@@ -101,13 +101,11 @@ module Resolver {
       && (forall d <- b3.datatypes :: d.name !in typeMap)
       && (forall d <- b3.datatypes :: d.name !in BuiltInTypes)
   {
-    // If there are no datatypes, succeed immediately
+
     if |b3.datatypes| == 0 {
       return Success(());
     }
     
-    // For now, return failure when datatypes are present to ensure verification is trivial
-    // This will be implemented later when datatype resolution is needed
     return Failure("datatype resolution not yet implemented");
   }
 
