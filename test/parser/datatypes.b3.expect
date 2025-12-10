@@ -14,4 +14,8 @@ datatype List = Nil() | Cons(head: int, tail: List)
 
 datatype Tree = Leaf(value: int) | Node(left: Tree, right: Tree, data: int)
 
-function TestFunc(x: int): bool
+datatype TreeList = TNil() | TCons(head: Tree, tail: TreeList)
+
+datatype RoseTree = Leaf(value: int) | Node(children: TreeList)
+
+function TestFunc(x: MyType): List

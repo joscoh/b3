@@ -1,8 +1,6 @@
 // RUN: %b3 parse --print "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
-// Test datatype declarations
-
 // Zero-argument constructor
 datatype Unit = Unit()
 
@@ -21,8 +19,12 @@ datatype List = Nil() | Cons(head: int, tail: List)
 // Complex datatype with multiple constructors and fields
 datatype Tree = Leaf(value: int) | Node(left: Tree, right: Tree, data: int)
 
+// Nested datatype
+datatype TreeList = TNil() | TCons(head: Tree, tail: TreeList)
+datatype RoseTree = Leaf(value: int) | Node(children: TreeList)
+
 // Add a type declaration to verify parsing continues correctly
 type MyType
 
 // Add a function to verify parsing continues correctly
-function TestFunc(x: int): bool
+function TestFunc(x: MyType): List
