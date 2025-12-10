@@ -18,8 +18,6 @@ datatype Tree = Leaf(value: int) | Node(left: Tree, right: Tree, data: int)
 // Nested datatype
 datatype Foo = A(value: int, l: List) | B(t: Tree)
 
-// Add a type declaration to verify parsing continues correctly
+// Ensure parsing continues correctly
 type MyType
-
-// Add a function to verify parsing continues correctly
 function TestFunc(x: MyType): List
