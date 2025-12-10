@@ -178,6 +178,10 @@ module Parser {
     parser.I_I(Sym(",").e_I(parser).Rep()).M2(MId, (x, xs) => [x] + xs)
   }
 
+  function parseNonemptyBarDelimitedSeq<X>(parser: B<X>): B<seq<X>> {
+    parser.I_I(Sym("|").e_I(parser).Rep()).M2(MId, (x, xs) => [x] + xs)
+  }
+
   function Unfold3l<X, Y, Z>(r: ((X, Y), Z)): (X, Y, Z) {
     (r.0.0, r.0.1, r.1)
   }
@@ -229,7 +233,7 @@ module Parser {
 
   const parseDatatypeDecl: B<DatatypeDecl> :=
     T("datatype").e_I(parseId).Then(name =>
-      Sym("=").e_I(parseConstructor.RepSep(Sym("|"))).M(constructors =>
+      Sym("=").e_I(parseNonemptyBarDelimitedSeq(parseConstructor)).M(constructors =>
         DatatypeDecl(name, constructors)
       )
     )
