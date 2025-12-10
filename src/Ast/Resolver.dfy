@@ -18,11 +18,10 @@ module Resolver {
   method Resolve(b3: Raw.Program) returns (r: Result<Ast.Program, string>)
     ensures r.Success? ==> b3.WellFormed() && r.value.WellFormed()
   {
-    // TODO: Remove this assumption after datatype parsing is implemented (task 2)
-    // For now, we assume datatypes is empty since parsing is not yet implemented
-    assume {:axiom} b3.datatypes == [];
     
     var typeMap, types :- ResolveAllTypes(b3);
+
+    var _ :- ResolveAllDatatypes(b3, typeMap);
 
     var taggerMap, taggerFunctions :- ResolveAllTaggers(b3, typeMap);
     ConsequencesOfTagResolution(taggerMap, taggerFunctions);
@@ -90,6 +89,26 @@ module Resolver {
       types := types + [decl];
     }
     return Success(typeMap), types;
+  }
+
+  method ResolveAllDatatypes(b3: Raw.Program, typeMap: map<string, TypeDecl>) returns (r: Result<(), string>)
+    requires forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in typeMap
+    ensures r.Success? ==>
+      // raw datatypes were well-formed
+      && (forall i, j :: 0 <= i < j < |b3.datatypes| ==> b3.datatypes[i].name != b3.datatypes[j].name)
+      && (forall d <- b3.datatypes :: d.WellFormed(b3))
+      // datatype names do not conflict with existing type names
+      && (forall d <- b3.datatypes :: d.name !in typeMap)
+      && (forall d <- b3.datatypes :: d.name !in BuiltInTypes)
+  {
+    // If there are no datatypes, succeed immediately
+    if |b3.datatypes| == 0 {
+      return Success(());
+    }
+    
+    // For now, return failure when datatypes are present to ensure verification is trivial
+    // This will be implemented later when datatype resolution is needed
+    return Failure("datatype resolution not yet implemented");
   }
 
   method ResolveAllTaggers(b3: Raw.Program, typeMap: map<string, TypeDecl>) returns (r: Result<map<string, Function>, string>, taggerFunctions: seq<Function>)
