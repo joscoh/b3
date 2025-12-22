@@ -1,0 +1,7 @@
+// Resolved B3 program
+
+function BoolTag(subject: Bool): tag
+
+function True(): Bool tag BoolTag
+
+function False(): Bool tag BoolTag

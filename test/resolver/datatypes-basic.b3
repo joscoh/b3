@@ -1,0 +1,10 @@
+// RUN: %b3 resolve --rprint "%s" > "%t" 2>&1
+// RUN: %diff "%s.expect" "%t"
+
+// Test: Basic datatype resolution should succeed
+
+datatype Bool = True() | False()
+
+datatype Option = None() | Some(value: int)
+
+datatype List = Nil() | Cons(head: int, tail: List)

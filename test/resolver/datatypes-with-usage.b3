@@ -1,0 +1,6 @@
+// RUN: %b3 resolve --rprint "%s" > "%t" 2>&1
+// RUN: %diff "%s.expect" "%t"
+
+// Test: Datatype resolution generates the expected constructs
+
+datatype Bool = True() | False()

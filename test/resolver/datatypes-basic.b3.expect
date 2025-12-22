@@ -1,0 +1,19 @@
+// Resolved B3 program
+
+function BoolTag(subject: Bool): tag
+
+function OptionTag(subject: Option): tag
+
+function ListTag(subject: List): tag
+
+function True(): Bool tag BoolTag
+
+function False(): Bool tag BoolTag
+
+function None(): Option tag OptionTag
+
+function Some(injective value: int): Option tag OptionTag
+
+function Nil(): List tag ListTag
+
+function Cons(injective head: int, injective tail: List): List tag ListTag
