@@ -30,18 +30,7 @@ module Resolver {
     var allTaggerFunctions := taggerFunctions + dataTaggers;
     
     // Create tagger map that includes generated taggers
-    var allTaggerMap := taggerMap;
-    for i := 0 to |dataTaggers|
-    {
-      var tagger := dataTaggers[i];
-      // Assume no name conflicts for now - this is a complex proof
-      assume {:axiom} tagger.Name !in allTaggerMap;
-      allTaggerMap := allTaggerMap[tagger.Name := tagger];
-    }
-    
-    // Assume the combined tagger map maintains required properties
-    assume {:axiom} NameAlignment(allTaggerMap);
-    assume {:axiom} forall taggerName <- allTaggerMap :: allTaggerMap[taggerName].WellFormedAsTagger();
+    var allTaggerMap :- AddTaggersToMap(taggerMap, dataTaggers);
 
     var functionMap, functions, generatedAxioms :- ResolveAllFunctions(b3, fullTypeMap, allTaggerMap);
     
@@ -49,20 +38,10 @@ module Resolver {
     var allFunctions := functions + constrs;
 
     // Create function map that includes generated constructors
-    var allFunctionMap := functionMap;
-    for i := 0 to |constrs|
-    {
-      var func := constrs[i];
-      // Assume no name conflicts for now - this is a complex proof
-      assume {:axiom} func.Name !in allFunctionMap;
-      allFunctionMap := allFunctionMap[func.Name := func];
-    }
-    
-    // Assume the combined function map maintains required properties
-    assume {:axiom} NameAlignment(allFunctionMap);
+    var allFunctionMap :- AddFunctionsToMap(functionMap, constrs);
 
     var ers := ExprResolverState(b3, fullTypeMap, allTaggerMap + allFunctionMap);
-    assume {:axiom} ers.Valid();
+    assert (ers.functionMap == allTaggerMap + allFunctionMap);
     assume {:axiom} fresh(ers.functionMap.Values);
     var axioms :- ResolveAllAxioms(ers);
 
@@ -73,6 +52,53 @@ module Resolver {
     assume {:axiom} r3.WellFormed();
 
     return Success(r3);
+  }
+  
+  method AddTaggersToMap(taggerMap: map<string, Function>, dataTaggers: seq<Function>) returns (r: Result<map<string, Function>, string>)
+    requires NameAlignment(taggerMap)
+    requires forall t <- dataTaggers :: t.WellFormedAsTagger()
+    requires forall taggerName <- taggerMap :: taggerMap[taggerName].WellFormedAsTagger()
+    requires forall t <- dataTaggers :: t.FromDatatype.Some?
+  ensures r.Success? ==> var allTaggerMap := r.value;
+    && NameAlignment(allTaggerMap)
+    && forall taggerName <- allTaggerMap :: allTaggerMap[taggerName].WellFormedAsTagger()
+    //TODO: do we need a postcondition saying it is the concat?
+  {
+    var allTaggerMap := taggerMap;
+    for i := 0 to |dataTaggers|
+    invariant NameAlignment(allTaggerMap)
+    invariant forall taggerName <- allTaggerMap :: allTaggerMap[taggerName].WellFormedAsTagger()
+    {
+      var tagger := dataTaggers[i];
+      if tagger.Name in allTaggerMap {
+        var adt := tagger.FromDatatype.Extract();
+        return Failure("Cannot define tagger for datatype " + adt + ", already declared.");
+      }
+      allTaggerMap := allTaggerMap[tagger.Name := tagger];
+    }
+    return Success(allTaggerMap);
+  }
+  
+  
+  method AddFunctionsToMap(functionMap: map<string, Function>, constrs: seq<Function>) returns (r: Result<map<string, Function>, string>)
+    requires NameAlignment(functionMap)
+    requires forall c <- constrs :: c.FromDatatype.Some?
+  ensures r.Success? ==> var allFunctionMap := r.value;
+    && NameAlignment(allFunctionMap)
+    //TODO: do we need a postcondition saying it is the concat?
+  {
+    var allFunctionMap := functionMap;
+    for i := 0 to |constrs|
+    invariant NameAlignment(allFunctionMap)
+    {
+      var constr := constrs[i];
+      if constr.Name in allFunctionMap {
+        var adt := constr.FromDatatype.Extract();
+        return Failure("Cannot define constructor " + constr.Name + " for datatype " + adt + ", already declared.");
+      }
+      allFunctionMap := allFunctionMap[constr.Name := constr];
+    }
+    return Success(allFunctionMap);
   }
 
   method ResolveAllTypes(b3: Raw.Program) returns (r: Result<map<string, TypeDecl>, string>, types: seq<TypeDecl>)
@@ -132,6 +158,9 @@ module Resolver {
       && (forall d <- b3.datatypes :: d.name !in typeMap)
       && (forall d <- b3.datatypes :: d.name !in BuiltInTypes)
       && (forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in fullTypeMap)
+      && (forall t <- taggerFunctions :: t.WellFormedAsTagger())
+      && (forall t <- taggerFunctions :: t.FromDatatype.Some?)
+      && (forall c <- constrs :: c.FromDatatype.Some?)
   {
 
     if |b3.datatypes| == 0 {
@@ -198,16 +227,13 @@ module Resolver {
       invariant forall func <- allConstructors :: func.WellFormed()
       invariant forall func <- allTaggers :: func.WellFormedAsTagger()
       invariant forall func <- allConstructors :: func.FromDatatype.Some?
+      invariant forall func <- allTaggers :: func.FromDatatype.Some?
     {
       var dt := b3.datatypes[i];
       var typeDecl := allTypes[i];
       
       // Desugar the datatype - we know dt is well-formed in b3 context
       assert dt.WellFormed(b3);
-      
-      // For the precondition, we need to show dt is well-formed in a minimal context
-      // This is complex to prove, so we use assume false as mentioned in the task
-      //assume {:axiom} dt.WellFormed(Raw.Program([], [dt], [], [], [], []));
       
       var result := DatatypeDesugaring.DesugarDatatype(b3, dt, fullMap);
       if result.Failure? {

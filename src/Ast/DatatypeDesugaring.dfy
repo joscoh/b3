@@ -27,6 +27,7 @@ module DatatypeDesugaring {
       && typ.Name == dt.name
       && tagger.Name == dt.name + "Tag"
       && tagger.WellFormedAsTagger()
+      && tagger.FromDatatype == Some(dt.name)
       && (forall func: Function <- constructors :: func.WellFormed())
       && (forall func: Function <- constructors :: func.FromDatatype == Some(dt.name))
       && |constructors| == |dt.constructors|
@@ -45,9 +46,12 @@ module DatatypeDesugaring {
 
   // Create tagger for the datatype
   method CreateTagger(dt: Raw.DatatypeDecl, typ: TypeDecl) returns (r: Result<Function, string>)
-    ensures r.Success? ==> fresh(r.value) && r.value.WellFormedAsTagger()
-    ensures r.Success? ==> r.value.Name == dt.name + "Tag"
-    ensures r.Success? ==> r.value.Parameters[0].typ == UserType(typ)
+    ensures r.Success? ==> var tag := r.value;
+        && fresh(tag) 
+        && tag.WellFormedAsTagger()
+        && tag.Name == dt.name + "Tag"
+        && tag.Parameters[0].typ == UserType(typ)
+        && tag.FromDatatype == Some(dt.name)
   {
     var taggerName := dt.name + "Tag";
     
