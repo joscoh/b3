@@ -19,7 +19,7 @@ module Ast {
     reveals Procedure.SignatureCorrespondence, Procedure.WellFormedHeader
     reveals Function, FParameter, FunctionDefinition
     reveals Function.SignatureCorrespondence, Function.SignatureWellFormed, Function.WellFormed, Function.WellFormedAsTagger, FParameter.WellFormed, FunctionDefinition.WellFormed
-    provides Function.Parameters, Function.ResultType, Function.Tag, Function.Definition, Function.ExplainedBy, FParameter.injective
+    provides Function.Parameters, Function.ResultType, Function.Tag, Function.Definition, Function.ExplainedBy, Function.FromDatatype, FParameter.injective
     reveals Axiom, Axiom.WellFormed
     provides Axiom.Explains, Axiom.Expr
     provides Variable.name, Variable.typ
@@ -179,10 +179,12 @@ module Ast {
     const Tag: Option<Function>
     var Definition: Option<FunctionDefinition>
     var ExplainedBy: seq<Axiom>
+    const FromDatatype: Option<string>
 
-    constructor (name: string, parameters: seq<FParameter>, resultType: Type, maybeTag: Option<Function>)
-      ensures Name == name && Parameters == parameters && ResultType == resultType && Tag == maybeTag && Definition == None
+    constructor (name: string, parameters: seq<FParameter>, resultType: Type, maybeTag: Option<Function>, maybeData: Option<string>)
+      ensures Name == name && Parameters == parameters && ResultType == resultType && Tag == maybeTag && Definition == None 
       ensures ExplainedBy == []
+      ensures FromDatatype == maybeData
     {
       Name := name;
       Parameters := parameters;
@@ -190,6 +192,7 @@ module Ast {
       Tag := maybeTag;
       Definition := None;
       ExplainedBy := [];
+      FromDatatype := maybeData;
     }
 
     predicate SignatureCorrespondence(func: Raw.Function) {

@@ -64,7 +64,7 @@ module FunctionDesugaring {
 
         Raw.SurelyLegalVariableName("subject");
         var parameter := new FParameter("subject", false, func.ResultType);
-        var inverseFunction := new Function(name, [parameter], param.typ, None);
+        var inverseFunction := new Function(name, [parameter], param.typ, None, func.FromDatatype);
         assert inverseFunction.WellFormed();
 
         functions := functions + [inverseFunction];
@@ -94,7 +94,7 @@ module FunctionDesugaring {
     var name := CombineNames(func.Name, "tag");
 
     // function F.tag(): tag { %tag }
-    var Ftag := new Function(name, [], TagType, None);
+    var Ftag := new Function(name, [], TagType, None, func.FromDatatype);
     Ftag.Definition := Some(FunctionDefinition([], CustomLiteral("%tag", TagType)));
     functions := functions + [Ftag];
 

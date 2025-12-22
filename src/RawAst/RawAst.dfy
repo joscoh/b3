@@ -47,7 +47,7 @@ module RawAst {
     }
 
     predicate IsType(typ: TypeName) {
-      typ in BuiltInTypes || typ in types
+      typ in BuiltInTypes || typ in types || typ in (set dt <- datatypes :: dt.name)
     }
   }
 

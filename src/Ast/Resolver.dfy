@@ -20,14 +20,14 @@ module Resolver {
   {
     var typeMap, types :- ResolveAllTypes(b3);
 
-    var _ :- ResolveAllDatatypes(b3, typeMap);
+    var constrs, dataTaggers, datatypes, fullTypeMap :- ResolveAllDatatypes(b3, typeMap);
 
-    var taggerMap, taggerFunctions :- ResolveAllTaggers(b3, typeMap);
+    var taggerMap, taggerFunctions :- ResolveAllTaggers(b3, b3.taggers, fullTypeMap);
     ConsequencesOfTagResolution(taggerMap, taggerFunctions);
 
-    var functionMap, functions, generatedAxioms :- ResolveAllFunctions(b3, typeMap, taggerMap);
+    var functionMap, functions, generatedAxioms :- ResolveAllFunctions(b3, fullTypeMap, taggerMap);
 
-    var ers := ExprResolverState(b3, typeMap, taggerMap + functionMap);
+    var ers := ExprResolverState(b3, fullTypeMap, taggerMap + functionMap);
     assert ers.Valid();
     assert fresh(ers.functionMap.Values) by {
       assert ers.functionMap.Values == taggerMap.Values + functionMap.Values;
@@ -59,9 +59,11 @@ module Resolver {
       && (forall i, j :: 0 <= i < j < |types| ==> types[i].Name != types[j].Name)
       // typeMap.Keys/types correspondence
       && LinearForm(r.value, types)
+      && (forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in typeMap || typename in (set dt <- b3.datatypes :: dt.name))
   {
     var typeMap: map<string, TypeDecl> := map[];
     types := [];
+    // || typename in Seq.Map((x : Raw.DatatypeDecl) => x.name, b3.datatypes));
     for n := 0 to |b3.types|
       // typeMap maps user-defined types seen so far to distinct type-declaration objects
       invariant typeMap.Keys == set typename <- b3.types[..n]
@@ -75,6 +77,8 @@ module Resolver {
       invariant forall i, j :: 0 <= i < j < |types| ==> types[i].Name != types[j].Name
       // typeMap.Keys/types correspondence 
       invariant LinearForm(typeMap, types)
+      // b3.IsType definition
+      invariant (forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in typeMap || typename in b3.types[n..] || typename in (set dt <- b3.datatypes :: dt.name))
     {
       var name := b3.types[n];
       if name in BuiltInTypes {
@@ -91,8 +95,8 @@ module Resolver {
   }
 
   // TODO: implement datatype resolution
-  method ResolveAllDatatypes(b3: Raw.Program, typeMap: map<string, TypeDecl>) returns (r: Result<(), string>)
-    requires forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in typeMap
+  method ResolveAllDatatypes(b3: Raw.Program, typeMap: map<string, TypeDecl>) returns (r: Result<(), string>, constrs:seq<Function>, taggerFunctions: seq<Function>, fullTypeMap: map<string, TypeDecl>)
+    requires forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in typeMap || typename in (set dt <- b3.datatypes :: dt.name)
     ensures r.Success? ==>
       // raw datatypes were well-formed
       && (forall i, j :: 0 <= i < j < |b3.datatypes| ==> b3.datatypes[i].name != b3.datatypes[j].name)
@@ -100,24 +104,39 @@ module Resolver {
       // datatype names do not conflict with existing type names
       && (forall d <- b3.datatypes :: d.name !in typeMap)
       && (forall d <- b3.datatypes :: d.name !in BuiltInTypes)
+      && (forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in fullTypeMap)
   {
 
     if |b3.datatypes| == 0 {
-      return Success(());
+      // assert((set dt <- b3.datatypes :: dt.name) == {});
+      // assert (typ in BuiltInTypes || typ in types || typ in Seq.Map((x : DatatypeDecl) => x.name, datatypes))
+      return Success(()), [], [], typeMap;
     }
     
-    return Failure("datatype resolution not yet implemented");
+    var fullMap := typeMap;
+    
+    for n := 0 to |b3.datatypes|
+    invariant (forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in fullMap || typename in (set dt <- b3.datatypes[n..] :: dt.name))
+    {
+      var d := b3.datatypes[n];
+      // Step 1: Add types to typeMap
+      var decl := new TypeDecl(d.name);
+      fullMap := fullMap[d.name := decl];
+    }
+    
+    
+    return Failure("datatype resolution not yet implemented"), [], [], fullMap;
   }
 
-  method ResolveAllTaggers(b3: Raw.Program, typeMap: map<string, TypeDecl>) returns (r: Result<map<string, Function>, string>, taggerFunctions: seq<Function>)
+  method ResolveAllTaggers(b3: Raw.Program, taggers: seq<Raw.Tagger>, typeMap: map<string, TypeDecl>) returns (r: Result<map<string, Function>, string>, taggerFunctions: seq<Function>)
     requires forall typename :: b3.IsType(typename) <==> typename in BuiltInTypes || typename in typeMap
     ensures r.Success? ==>
       // raw taggers were well-formed
-      && (forall i, j :: 0 <= i < j < |b3.taggers| ==> b3.taggers[i].name != b3.taggers[j].name)
-      && (forall tagger <- b3.taggers :: tagger.WellFormed(b3))
+      && (forall i, j :: 0 <= i < j < |taggers| ==> taggers[i].name != taggers[j].name)
+      && (forall tagger <- taggers :: tagger.WellFormed(b3))
     ensures r.Success? ==> var taggerMap: map<string, Function> := r.value;
       && NameAlignment(taggerMap)
-      && taggerMap.Keys == (set tagger <- b3.taggers :: tagger.name)
+      && taggerMap.Keys == (set tagger <- taggers :: tagger.name)
       && LinearForm(taggerMap, taggerFunctions)
     ensures r.Success? ==>
       && NamedDecl.Distinct(taggerFunctions)
@@ -126,23 +145,23 @@ module Resolver {
   {
     var taggerMap: map<string, Function> := map[];
     taggerFunctions := [];
-    for n := 0 to |b3.taggers|
+    for n := 0 to |taggers|
       // taggerMap maps the user-defined taggers seen so far to distinct and fresh tagger-declaration objects
-      invariant taggerMap.Keys == set tagger <- b3.taggers[..n] :: tagger.name
+      invariant taggerMap.Keys == set tagger <- taggers[..n] :: tagger.name
       invariant fresh(taggerFunctions)
       // taggerMap organizes tagger-declaration objects correctly according to their names
       invariant NameAlignment(taggerMap)
       // taggers seen so far have distinct names
-      invariant forall i, j :: 0 <= i < j < n ==> b3.taggers[i].name != b3.taggers[j].name
+      invariant forall i, j :: 0 <= i < j < n ==> taggers[i].name != taggers[j].name
       // the taggers seen so far are well-formed
-      invariant forall tagger <- b3.taggers[..n] :: tagger.WellFormed(b3)
+      invariant forall tagger <- taggers[..n] :: tagger.WellFormed(b3)
       invariant forall tagger <- taggerFunctions :: tagger.WellFormedAsTagger()
       // resolved tagger functions have distinct names
       invariant forall i, j :: 0 <= i < j < |taggerFunctions| ==> taggerFunctions[i].Name != taggerFunctions[j].Name
       // taggerFunctions is a linear order of the tagger functions
       invariant LinearForm(taggerMap, taggerFunctions)
     {
-      var tagger := b3.taggers[n];
+      var tagger := taggers[n];
       var name := tagger.name;
       if name in taggerMap {
         return Failure("duplicate tagger name: " + name), taggerFunctions;
@@ -153,7 +172,8 @@ module Resolver {
       var parameter := new FParameter("subject", false, typ);
       assert Raw.LegalVariableName("subject");
       assert parameter.WellFormed();
-      var rTagger := new Function(name, [parameter], TagType, None);
+      //JOSH: NOTE: may change if we just add taggers
+      var rTagger := new Function(name, [parameter], TagType, None, None);
       NewNamePreservesLinearForm(name, rTagger, taggerMap, taggerFunctions);
       taggerMap := taggerMap[name := rTagger];
       assert forall tagger <- taggerFunctions :: tagger.WellFormedAsTagger();
@@ -347,7 +367,7 @@ module Resolver {
       maybeTag := Some(tag);
     }
 
-    var rfunc := new Function(func.name, formals, resultType, maybeTag);
+    var rfunc := new Function(func.name, formals, resultType, maybeTag, None);
     return Success(rfunc);
   }
 
